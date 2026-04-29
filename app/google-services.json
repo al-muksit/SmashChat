@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "124679497127",
+    "project_id": "smashchat-7ed80",
+    "storage_bucket": "smashchat-7ed80.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:124679497127:android:d6369b94e9428c3b194282",
+        "android_client_info": {
+          "package_name": "com.smashchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1vHng_GM9n0JpzOcw02trM47uHvYEDbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
