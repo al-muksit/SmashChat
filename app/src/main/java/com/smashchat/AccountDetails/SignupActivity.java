@@ -24,6 +24,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivitySignupBinding;
 
 import java.util.Objects;
@@ -37,6 +38,7 @@ public class SignupActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
     private FirebaseStorage firebaseStorage;
+    private PreferenceManager preferenceManager;
     private ActivitySignupBinding binding;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
@@ -59,6 +61,7 @@ public class SignupActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
+        preferenceManager = new PreferenceManager(this);
 
         progressDialog = new ProgressDialog(SignupActivity.this);
         progressDialog.setTitle("Creating Account");

@@ -24,12 +24,12 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.smashchat.AccountDetails.SigninActivity;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityProfileBinding;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * ProfileActivity allows users to view and edit their profile information,
@@ -41,6 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
     private FirebaseStorage firebaseStorage;
+    private PreferenceManager preferenceManager;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
     private ActivityResultLauncher<String> galleryLauncher;
@@ -62,12 +63,16 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
+        preferenceManager = new PreferenceManager(this);
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Profile Update");
         progressDialog.setMessage("Updating your information...");
 
-        // Load existing user data
+        // Load cached data first for immediate display
+        loadCachedData();
+        
+        // Load fresh user data from Firebase
         loadUserData();
 
         // Image picker
@@ -87,10 +92,25 @@ public class ProfileActivity extends AppCompatActivity {
         // Logout button
         binding.btnLogout.setOnClickListener(v -> {
             firebaseAuth.signOut();
+            preferenceManager.clear();
             Intent intent = new Intent(ProfileActivity.this, SigninActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         });
+    }
+
+    private void loadCachedData() {
+        String cachedName = preferenceManager.getUserName();
+        String cachedPic = preferenceManager.getProfilePic();
+        String cachedEmail = preferenceManager.getEmail();
+
+        if (!cachedName.isEmpty()) binding.etUserName.setText(cachedName);
+        if (!cachedEmail.isEmpty()) binding.etEmail.setText(cachedEmail);
+        if (!cachedPic.isEmpty()) {
+            Picasso.get().load(cachedPic)
+                    .placeholder(R.drawable.profile)
+                    .into(binding.profileImage);
+        }
     }
 
     private void loadUserData() {
@@ -108,6 +128,9 @@ public class ProfileActivity extends AppCompatActivity {
                             binding.etPhone.setText(user.getPhone());
                             binding.etAddress.setText(user.getAddress());
                             
+                            // Save to cache
+                            preferenceManager.saveUserData(user.getUserName(), user.getEmail(), user.getProfilePic());
+
                             if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
                                 Picasso.get().load(user.getProfilePic())
                                         .placeholder(R.drawable.profile)
@@ -125,6 +148,7 @@ public class ProfileActivity extends AppCompatActivity {
         String name = binding.etUserName.getText().toString().trim();
         String phone = binding.etPhone.getText().toString().trim();
         String address = binding.etAddress.getText().toString().trim();
+        String email = binding.etEmail.getText().toString().trim();
 
         if (name.isEmpty()) {
             Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
@@ -140,7 +164,9 @@ public class ProfileActivity extends AppCompatActivity {
             reference.putFile(selectedImage).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     reference.getDownloadUrl().addOnSuccessListener(uri -> {
-                        saveToDatabase(uid, name, phone, address, uri.toString());
+                        String imageUrl = uri.toString();
+                        preferenceManager.saveUserData(name, email, imageUrl);
+                        saveToDatabase(uid, name, phone, address, imageUrl);
                     });
                 } else {
                     progressDialog.dismiss();
@@ -148,6 +174,7 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             });
         } else {
+            preferenceManager.saveUserData(name, email, preferenceManager.getProfilePic());
             saveToDatabase(uid, name, phone, address, null);
         }
     }
@@ -172,3 +199,4 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 }
+

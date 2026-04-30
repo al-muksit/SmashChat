@@ -1,6 +1,7 @@
 package com.smashchat.Adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.smashchat.Models.Users;
+import com.smashchat.OtherUserProfileActivity;
 import com.smashchat.R;
 import com.squareup.picasso.Picasso;
 
@@ -50,7 +52,18 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         // Set username and last message (if available)
         holder.userName.setText(users.getUserName());
         // For now, using a placeholder for last message
-        holder.lastMessage.setText("Tap to chat");
+        holder.lastMessage.setText("Tap to view profile");
+
+        // Set click listener to open user profile
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, OtherUserProfileActivity.class);
+            intent.putExtra("userName", users.getUserName());
+            intent.putExtra("email", users.getEmail());
+            intent.putExtra("phone", users.getPhone());
+            intent.putExtra("address", users.getAddress());
+            intent.putExtra("profilePic", users.getProfilePic());
+            context.startActivity(intent);
+        });
     }
 
     @Override
