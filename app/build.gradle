@@ -46,6 +46,7 @@ android {
         implementation libs.google.firebase.auth
         implementation libs.firebase.database
         implementation libs.firebase.firestore
+        implementation libs.firebase.storage
         implementation libs.google.firebase.analytics
 
         // UI Components

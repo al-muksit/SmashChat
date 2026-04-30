@@ -2,11 +2,14 @@ package com.smashchat.AccountDetails;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -18,6 +21,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.smashchat.Models.Users;
 import com.smashchat.databinding.ActivitySignupBinding;
 
@@ -25,46 +30,51 @@ import java.util.Objects;
 
 /**
  * SignupActivity handles the user registration process using Firebase Authentication
- * and stores user details in Firebase Realtime Database.
+ * and stores user details in Firebase Realtime Database and Storage.
  */
 public class SignupActivity extends AppCompatActivity {
 
-    // Firebase instances
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
-
-    // View Binding instance
+    private FirebaseStorage firebaseStorage;
     private ActivitySignupBinding binding;
-
-    // Deprecated ProgressDialog - Consider replacing with a ProgressBar in layout for better UX
     private ProgressDialog progressDialog;
+    private Uri selectedImage;
+    private ActivityResultLauncher<String> galleryLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Initializing View Binding
         binding = ActivitySignupBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        // Handling Window Insets for Edge-to-Edge display
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Initializing Firebase
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
+        firebaseStorage = FirebaseStorage.getInstance();
 
-        // Initializing ProgressDialog (Legacy approach)
         progressDialog = new ProgressDialog(SignupActivity.this);
         progressDialog.setTitle("Creating Account");
         progressDialog.setMessage("We are creating your account. Please wait...");
 
-        // Set up Sign Up button click listener
+        // Image picker launcher
+        galleryLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
+                result -> {
+                    if (result != null) {
+                        binding.profileImage.setImageURI(result);
+                        selectedImage = result;
+                    }
+                });
+
+        binding.profileImage.setOnClickListener(v -> galleryLauncher.launch("image/*"));
+
         binding.signup.setOnClickListener(v -> {
             String userStr = binding.username.getText().toString().trim();
             String emailStr = binding.email.getText().toString().trim();
@@ -77,27 +87,30 @@ public class SignupActivity extends AppCompatActivity {
 
             progressDialog.show();
             
-            // Create user with Firebase Auth
             firebaseAuth.createUserWithEmailAndPassword(emailStr, passStr)
                     .addOnCompleteListener(task -> {
-                        progressDialog.dismiss();
                         if (task.isSuccessful()) {
-                            // User created successfully, now store additional info in Database
-                            Users users = new Users(userStr, emailStr, passStr);
                             String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
                             
-                            firebaseDatabase.getReference().child("Users").child(id).setValue(users)
-                                    .addOnCompleteListener(dbTask -> {
-                                        if (dbTask.isSuccessful()) {
-                                            Toast.makeText(SignupActivity.this, "Account Registered Successfully", Toast.LENGTH_SHORT).show();
-                                            // Navigate to Sign-in screen
-                                            Intent intent = new Intent(SignupActivity.this, SigninActivity.class);
-                                            startActivity(intent);
-                                            finish();
-                                        }
-                                    });
+                            if (selectedImage != null) {
+                                // Upload image to Firebase Storage
+                                StorageReference reference = firebaseStorage.getReference().child("Profiles").child(id);
+                                reference.putFile(selectedImage).addOnCompleteListener(storageTask -> {
+                                    if (storageTask.isSuccessful()) {
+                                        reference.getDownloadUrl().addOnSuccessListener(uri -> {
+                                            String imageUrl = uri.toString();
+                                            saveUserToDatabase(id, userStr, emailStr, passStr, imageUrl);
+                                        });
+                                    } else {
+                                        progressDialog.dismiss();
+                                        Toast.makeText(SignupActivity.this, "Image upload failed", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                saveUserToDatabase(id, userStr, emailStr, passStr, "");
+                            }
                         } else {
-                            // Display error message from Firebase
+                            progressDialog.dismiss();
                             Toast.makeText(SignupActivity.this, 
                                     Objects.requireNonNull(task.getException()).getMessage(), 
                                     Toast.LENGTH_SHORT).show();
@@ -105,14 +118,30 @@ public class SignupActivity extends AppCompatActivity {
                     });
         });
 
-        // Navigate to Login activity if user already has an account
         binding.loginLink.setOnClickListener(v -> {
             Intent intent = new Intent(SignupActivity.this, SigninActivity.class);
             startActivity(intent);
         });
     }
 
-    // This method is used by android:onClick in XML if not using ViewBinding click listeners
+    private void saveUserToDatabase(String id, String username, String email, String password, String imageUrl) {
+        Users users = new Users(username, email, password);
+        users.setUserId(id);
+        users.setProfilePic(imageUrl);
+        
+        firebaseDatabase.getReference().child("Users").child(id).setValue(users)
+                .addOnCompleteListener(dbTask -> {
+                    progressDialog.dismiss();
+                    if (dbTask.isSuccessful()) {
+                        Toast.makeText(SignupActivity.this, "Account Registered Successfully", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(SignupActivity.this, SigninActivity.class));
+                        finish();
+                    } else {
+                        Toast.makeText(SignupActivity.this, "Database error", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     public void login(View view) {
         startActivity(new Intent(getApplicationContext(), SigninActivity.class));
     }

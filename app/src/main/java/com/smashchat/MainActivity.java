@@ -113,7 +113,10 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         
-        if (id == R.id.settings) {
+        if (id == R.id.profile) {
+            startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+            return true;
+        } else if (id == R.id.settings) {
             Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.logout) {

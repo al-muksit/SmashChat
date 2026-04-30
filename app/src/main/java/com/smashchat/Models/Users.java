@@ -10,17 +10,21 @@ public class Users {
     private String password;
     private String userId;
     private String lastMessage;
+    private String phone;
+    private String address;
 
     /**
      * Full constructor for a user.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage) {
+    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
         this.password = password;
         this.userId = userId;
         this.lastMessage = lastMessage;
+        this.phone = phone;
+        this.address = address;
     }
 
     /**
@@ -86,5 +90,21 @@ public class Users {
 
     public void setLastMessage(String lastMessage) {
         this.lastMessage = lastMessage;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

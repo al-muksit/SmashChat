@@ -18,13 +18,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="100sp"
-            android:layout_height="100sp"
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/profile_image"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:layout_gravity="center"
-            android:layout_marginTop="120sp"
-            app:srcCompat="@drawable/logo" />
+            android:layout_marginTop="50dp"
+            android:src="@drawable/profile"
+            app:civ_border_width="2dp"
+            app:civ_border_color="#009688" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Tap to upload image"
+            android:textColor="#fff"
+            android:textSize="12sp"
+            android:layout_marginBottom="20dp"/>
+
         <TextView
             android:id="@+id/textView"
             android:layout_width="wrap_content"
@@ -35,7 +47,7 @@
             android:textColor="#009688"
             android:textSize="30sp"
             android:textStyle="bold"
-            android:layout_marginBottom="40sp"/>
+            android:layout_marginBottom="20dp"/>
 
         <EditText
             android:background="@drawable/design_edittext"
