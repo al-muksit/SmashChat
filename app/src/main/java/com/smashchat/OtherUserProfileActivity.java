@@ -1,7 +1,7 @@
 package com.smashchat;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -53,7 +53,11 @@ public class OtherUserProfileActivity extends AppCompatActivity {
         }
 
         binding.btnMessage.setOnClickListener(v -> {
-            Toast.makeText(this, "Messaging feature coming soon!", Toast.LENGTH_SHORT).show();
+            Intent chatIntent = new Intent(OtherUserProfileActivity.this, ChatActivity.class);
+            chatIntent.putExtra("userId", getIntent().getStringExtra("userId"));
+            chatIntent.putExtra("userName", name);
+            chatIntent.putExtra("profilePic", profilePic);
+            startActivity(chatIntent);
         });
     }
 }
