@@ -127,6 +127,7 @@ public class ProfileActivity extends AppCompatActivity {
                             binding.etEmail.setText(user.getEmail());
                             binding.etPhone.setText(user.getPhone());
                             binding.etAddress.setText(user.getAddress());
+                            binding.etCustomId.setText(user.getCustomId());
                             
                             // Save to cache
                             preferenceManager.saveUserData(user.getUserName(), user.getEmail(), user.getProfilePic());
@@ -149,15 +150,50 @@ public class ProfileActivity extends AppCompatActivity {
         String phone = binding.etPhone.getText().toString().trim();
         String address = binding.etAddress.getText().toString().trim();
         String email = binding.etEmail.getText().toString().trim();
+        String customId = binding.etCustomId.getText().toString().trim();
 
         if (name.isEmpty()) {
             Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        if (customId.isEmpty()) {
+            Toast.makeText(this, "Unique ID cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         progressDialog.show();
         String uid = firebaseAuth.getUid();
 
+        // Check if customId is unique
+        firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(customId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        boolean isUnique = true;
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            if (!ds.getKey().equals(uid)) {
+                                isUnique = false;
+                                break;
+                            }
+                        }
+
+                        if (!isUnique) {
+                            progressDialog.dismiss();
+                            Toast.makeText(ProfileActivity.this, "This ID is already taken. Try another.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            performUpdate(uid, name, phone, address, email, customId);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        progressDialog.dismiss();
+                    }
+                });
+    }
+
+    private void performUpdate(String uid, String name, String phone, String address, String email, String customId) {
         if (selectedImage != null) {
             // Upload new image first
             StorageReference reference = firebaseStorage.getReference().child("Profiles").child(uid);
@@ -166,7 +202,7 @@ public class ProfileActivity extends AppCompatActivity {
                     reference.getDownloadUrl().addOnSuccessListener(uri -> {
                         String imageUrl = uri.toString();
                         preferenceManager.saveUserData(name, email, imageUrl);
-                        saveToDatabase(uid, name, phone, address, imageUrl);
+                        saveToDatabase(uid, name, phone, address, customId, imageUrl);
                     });
                 } else {
                     progressDialog.dismiss();
@@ -175,15 +211,16 @@ public class ProfileActivity extends AppCompatActivity {
             });
         } else {
             preferenceManager.saveUserData(name, email, preferenceManager.getProfilePic());
-            saveToDatabase(uid, name, phone, address, null);
+            saveToDatabase(uid, name, phone, address, customId, null);
         }
     }
 
-    private void saveToDatabase(String uid, String name, String phone, String address, String imageUrl) {
+    private void saveToDatabase(String uid, String name, String phone, String address, String customId, String imageUrl) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("userName", name);
         updates.put("phone", phone);
         updates.put("address", address);
+        updates.put("customId", customId);
         if (imageUrl != null) {
             updates.put("profilePic", imageUrl);
         }

@@ -12,11 +12,12 @@ public class Users {
     private String lastMessage;
     private String phone;
     private String address;
+    private String customId;
 
     /**
      * Full constructor for a user.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address) {
+    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
@@ -25,6 +26,7 @@ public class Users {
         this.lastMessage = lastMessage;
         this.phone = phone;
         this.address = address;
+        this.customId = customId;
     }
 
     /**
@@ -106,5 +108,13 @@ public class Users {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getCustomId() {
+        return customId;
+    }
+
+    public void setCustomId(String customId) {
+        this.customId = customId;
     }
 }

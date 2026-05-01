@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.smashchat.ChatActivity;
+import com.smashchat.MainActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.OtherUserProfileActivity;
 import com.smashchat.R;
@@ -52,13 +54,20 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         // Set username and last message (if available)
         holder.userName.setText(users.getUserName());
         // For now, using a placeholder for last message
-        holder.lastMessage.setText("Tap to view profile");
+        holder.lastMessage.setText(users.getLastMessage() != null ? users.getLastMessage() : "Tap to chat");
 
-        // Set click listener to open user profile
+        // Set click listener
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, OtherUserProfileActivity.class);
+            Intent intent;
+            if (context instanceof MainActivity) {
+                // If in MainActivity, go straight to chat
+                intent = new Intent(context, ChatActivity.class);
+            } else {
+                // If in SearchActivity, go to profile first
+                intent = new Intent(context, OtherUserProfileActivity.class);
+            }
+            intent.putExtra("userId", users.getUserId());
             intent.putExtra("userName", users.getUserName());
-            intent.putExtra("email", users.getEmail());
             intent.putExtra("phone", users.getPhone());
             intent.putExtra("address", users.getAddress());
             intent.putExtra("profilePic", users.getProfilePic());

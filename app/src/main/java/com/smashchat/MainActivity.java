@@ -77,29 +77,47 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchUsers() {
-        firebaseDatabase.getReference().child("Users").addValueEventListener(new ValueEventListener() {
-            @SuppressLint("NotifyDataSetChanged")
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                userList.clear(); // Clear list to avoid duplicates
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    Users user = dataSnapshot.getValue(Users.class);
-                    if (user != null) {
-                        user.setUserId(dataSnapshot.getKey());
-                        // Don't show the current logged-in user in the list
-                        if (!dataSnapshot.getKey().equals(FirebaseAuth.getInstance().getUid())) {
-                            userList.add(user);
+        String currentUid = FirebaseAuth.getInstance().getUid();
+        if (currentUid == null) return;
+
+        // Listen for active chats for the current user
+        firebaseDatabase.getReference().child("Chats").child(currentUid)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        userList.clear();
+                        if (!snapshot.exists()) {
+                            usersAdapter.notifyDataSetChanged();
+                            return;
+                        }
+
+                        for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
+                            String otherUserId = chatSnapshot.getKey();
+                            
+                            // Fetch user details for each active chat
+                            firebaseDatabase.getReference().child("Users").child(otherUserId)
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot userSnapshot) {
+                                            Users user = userSnapshot.getValue(Users.class);
+                                            if (user != null) {
+                                                user.setUserId(userSnapshot.getKey());
+                                                userList.add(user);
+                                                usersAdapter.notifyDataSetChanged();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                    });
                         }
                     }
-                }
-                usersAdapter.notifyDataSetChanged();
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MainActivity.this, "Failed to load users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(MainActivity.this, "Failed to load chats: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override
@@ -126,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return true;
         } else if (id == R.id.search) {
-            Toast.makeText(this, "Search coming soon", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, SearchActivity.class));
             return true;
         }
         
