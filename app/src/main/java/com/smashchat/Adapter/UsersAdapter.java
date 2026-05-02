@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.smashchat.ChatActivity;
-import com.smashchat.MainActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.OtherUserProfileActivity;
 import com.smashchat.R;
@@ -25,8 +24,8 @@ import java.util.ArrayList;
  */
 public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> {
     
-    private ArrayList<Users> list;
-    private Context context;
+    private final ArrayList<Users> list;
+    private final Context context;
 
     public UsersAdapter(ArrayList<Users> list, Context context) {
         this.list = list;
@@ -58,19 +57,15 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
 
         // Set click listener
         holder.itemView.setOnClickListener(v -> {
-            Intent intent;
-            if (context instanceof MainActivity) {
-                // If in MainActivity, go straight to chat
-                intent = new Intent(context, ChatActivity.class);
-            } else {
-                // If in SearchActivity, go to profile first
-                intent = new Intent(context, OtherUserProfileActivity.class);
-            }
+            Intent intent = new Intent(context, ChatActivity.class);
             intent.putExtra("userId", users.getUserId());
             intent.putExtra("userName", users.getUserName());
+            intent.putExtra("profilePic", users.getProfilePic());
+            
+            // Add other details just in case
             intent.putExtra("phone", users.getPhone());
             intent.putExtra("address", users.getAddress());
-            intent.putExtra("profilePic", users.getProfilePic());
+
             context.startActivity(intent);
         });
     }

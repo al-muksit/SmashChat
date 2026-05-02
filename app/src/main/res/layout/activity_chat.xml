@@ -41,7 +41,8 @@
             android:background="@drawable/design_edittext"
             android:hint="Type a message..."
             android:padding="12dp"
-            android:textColor="#000" />
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?android:attr/textColorHint" />
 
         <ImageView
             android:id="@+id/btnSend"

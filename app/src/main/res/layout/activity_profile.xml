@@ -45,7 +45,8 @@
                 android:background="@drawable/design_edittext"
                 android:hint="Name"
                 android:paddingStart="20dp"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
                 android:id="@+id/etCustomId"
@@ -55,7 +56,8 @@
                 android:background="@drawable/design_edittext"
                 android:hint="Unique User ID (e.g. @username)"
                 android:paddingStart="20dp"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
                 android:id="@+id/etEmail"
@@ -66,7 +68,8 @@
                 android:enabled="false"
                 android:hint="Email"
                 android:paddingStart="20dp"
-                android:textColor="#5E5E5E" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
                 android:id="@+id/etPhone"
@@ -77,7 +80,8 @@
                 android:hint="Phone Number"
                 android:inputType="phone"
                 android:paddingStart="20dp"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
                 android:id="@+id/etAddress"
@@ -89,7 +93,8 @@
                 android:hint="Address"
                 android:minHeight="80dp"
                 android:padding="15dp"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <Button
                 android:id="@+id/btnSave"

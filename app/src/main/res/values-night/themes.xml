@@ -2,6 +2,9 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.SmashChat" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">#009688</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">#3D425C</item>
+        <item name="android:textColorHint">#BCBCBC</item>
     </style>
 </resources>

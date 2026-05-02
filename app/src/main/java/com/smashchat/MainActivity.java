@@ -12,6 +12,8 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -25,6 +27,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.smashchat.AccountDetails.SigninActivity;
 import com.smashchat.Adapter.UsersAdapter;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
@@ -39,11 +42,20 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private ArrayList<Users> userList = new ArrayList<>();
     private UsersAdapter usersAdapter;
+    private PreferenceManager preferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        preferenceManager = new PreferenceManager(this);
+        // Apply theme before setContentView
+        if (preferenceManager.isDarkMode()) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
         // Initializing View Binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
@@ -124,6 +136,21 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
+
+        MenuItem themeItem = menu.findItem(R.id.dark_mode_toggle);
+        SwitchCompat themeSwitch = (SwitchCompat) themeItem.getActionView().findViewById(R.id.theme_switch);
+        
+        themeSwitch.setChecked(preferenceManager.isDarkMode());
+        
+        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            preferenceManager.setDarkMode(isChecked);
+            if (isChecked) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            }
+        });
+
         return true;
     }
 

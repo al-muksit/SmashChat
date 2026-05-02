@@ -60,16 +60,21 @@ public class SearchActivity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if (newText.length() > 2) {
-                    searchUser(newText);
-                }
+                searchUser(newText);
                 return true;
             }
         });
     }
 
     private void searchUser(String query) {
-        database.getReference().child("Users").orderByChild("customId").startAt(query).endAt(query + "\uf8ff")
+        if (query.isEmpty()) {
+            list.clear();
+            adapter.notifyDataSetChanged();
+            return;
+        }
+
+        String lowerCaseQuery = query.toLowerCase();
+        database.getReference().child("Users")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -78,14 +83,30 @@ public class SearchActivity extends AppCompatActivity {
                             Users user = ds.getValue(Users.class);
                             if (user != null) {
                                 user.setUserId(ds.getKey());
-                                list.add(user);
+                                
+                                String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
+                                String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
+                                String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
+                                
+                                if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery) || email.contains(lowerCaseQuery)) {
+                                    // Don't show current user
+                                    if (!ds.getKey().equals(com.google.firebase.auth.FirebaseAuth.getInstance().getUid())) {
+                                        list.add(user);
+                                    }
+                                }
                             }
                         }
                         adapter.notifyDataSetChanged();
+                        
+                        if (list.isEmpty()) {
+                            Toast.makeText(SearchActivity.this, "No users found", Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(SearchActivity.this, "Search error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 }
