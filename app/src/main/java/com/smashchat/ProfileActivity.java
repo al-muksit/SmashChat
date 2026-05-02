@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * ProfileActivity allows users to view and edit their profile information,
- * including profile picture, name, phone, and address.
+ * ProfileActivity allows users to view and edit their profile information independently.
+ * It manages profile picture updates and ensures a unique User ID.
  */
 public class ProfileActivity extends AppCompatActivity {
 
@@ -41,9 +41,11 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
     private FirebaseStorage firebaseStorage;
+    private PreferenceManager preferenceManager;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
     private ActivityResultLauncher<String> galleryLauncher;
+    private String currentProfilePicUrl = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,15 +64,14 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
+        preferenceManager = new PreferenceManager(this);
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Profile Update");
         progressDialog.setMessage("Updating your information...");
         
-        // Load user data from Firebase
         loadUserData();
 
-        // Image picker
         galleryLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
                 result -> {
                     if (result != null) {
@@ -81,12 +82,11 @@ public class ProfileActivity extends AppCompatActivity {
 
         binding.profileImage.setOnClickListener(v -> galleryLauncher.launch("image/*"));
 
-        // Save button
-        binding.btnSave.setOnClickListener(v -> updateProfile());
+        binding.btnSave.setOnClickListener(v -> validateAndUpdate());
 
-        // Logout button
         binding.btnLogout.setOnClickListener(v -> {
             firebaseAuth.signOut();
+            preferenceManager.clear();
             Intent intent = new Intent(ProfileActivity.this, SigninActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -108,6 +108,7 @@ public class ProfileActivity extends AppCompatActivity {
                             binding.etPhone.setText(user.getPhone());
                             binding.etAddress.setText(user.getAddress());
                             binding.etCustomId.setText(user.getCustomId());
+                            currentProfilePicUrl = user.getProfilePic();
 
                             if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
                                 Picasso.get().load(user.getProfilePic())
@@ -122,44 +123,35 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
-    private void updateProfile() {
-        String name = binding.etUserName.getText().toString().trim();
-        String phone = binding.etPhone.getText().toString().trim();
-        String address = binding.etAddress.getText().toString().trim();
-        String email = binding.etEmail.getText().toString().trim();
+    private void validateAndUpdate() {
         String customId = binding.etCustomId.getText().toString().trim();
-
-        if (name.isEmpty()) {
-            Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
-            return;
+        if (!customId.startsWith("@")) {
+            customId = "@" + customId;
         }
-
-        if (customId.isEmpty()) {
-            Toast.makeText(this, "Unique ID cannot be empty", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        progressDialog.show();
+        
+        final String finalCustomId = customId;
         String uid = firebaseAuth.getUid();
 
-        // Check if customId is unique
-        firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(customId)
+        progressDialog.show();
+
+        // Check uniqueness if User ID was changed
+        firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(finalCustomId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        boolean isUnique = true;
+                        boolean isTaken = false;
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             if (!ds.getKey().equals(uid)) {
-                                isUnique = false;
+                                isTaken = true;
                                 break;
                             }
                         }
 
-                        if (!isUnique) {
+                        if (isTaken) {
                             progressDialog.dismiss();
-                            Toast.makeText(ProfileActivity.this, "This ID is already taken. Try another.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ProfileActivity.this, "This User ID is already taken. Try another.", Toast.LENGTH_SHORT).show();
                         } else {
-                            performUpdate(uid, name, phone, address, email, customId);
+                            uploadImageAndSave(uid, finalCustomId);
                         }
                     }
 
@@ -170,15 +162,13 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
-    private void performUpdate(String uid, String name, String phone, String address, String email, String customId) {
+    private void uploadImageAndSave(String uid, String customId) {
         if (selectedImage != null) {
-            // Upload new image first
             StorageReference reference = firebaseStorage.getReference().child("Profiles").child(uid);
             reference.putFile(selectedImage).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     reference.getDownloadUrl().addOnSuccessListener(uri -> {
-                        String imageUrl = uri.toString();
-                        saveToDatabase(uid, name, phone, address, customId, imageUrl);
+                        saveToDatabase(uid, customId, uri.toString());
                     });
                 } else {
                     progressDialog.dismiss();
@@ -186,29 +176,31 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             });
         } else {
-            saveToDatabase(uid, name, phone, address, customId, null);
+            saveToDatabase(uid, customId, currentProfilePicUrl);
         }
     }
 
-    private void saveToDatabase(String uid, String name, String phone, String address, String customId, String imageUrl) {
+    private void saveToDatabase(String uid, String customId, String imageUrl) {
         Map<String, Object> updates = new HashMap<>();
-        updates.put("userName", name);
-        updates.put("phone", phone);
-        updates.put("address", address);
+        updates.put("userName", binding.etUserName.getText().toString().trim());
+        updates.put("phone", binding.etPhone.getText().toString().trim());
+        updates.put("address", binding.etAddress.getText().toString().trim());
         updates.put("customId", customId);
-        if (imageUrl != null) {
-            updates.put("profilePic", imageUrl);
-        }
+        updates.put("profilePic", imageUrl);
 
         firebaseDatabase.getReference().child("Users").child(uid).updateChildren(updates)
                 .addOnCompleteListener(task -> {
                     progressDialog.dismiss();
                     if (task.isSuccessful()) {
-                        Toast.makeText(ProfileActivity.this, "Profile Updated", Toast.LENGTH_SHORT).show();
+                        preferenceManager.saveUserData(
+                                binding.etUserName.getText().toString().trim(),
+                                binding.etEmail.getText().toString().trim(),
+                                imageUrl
+                        );
+                        Toast.makeText(ProfileActivity.this, "Profile Updated Successfully", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(ProfileActivity.this, "Update failed", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 }
-

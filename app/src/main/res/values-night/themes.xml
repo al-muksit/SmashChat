@@ -5,6 +5,6 @@
         <item name="colorPrimary">#009688</item>
         <item name="colorOnSurface">@color/white</item>
         <item name="colorSurfaceVariant">#3D425C</item>
-        <item name="android:textColorHint">#BCBCBC</item>
+        <item name="android:textColorHint">#282E2B</item>
     </style>
 </resources>

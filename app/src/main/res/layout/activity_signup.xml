@@ -18,23 +18,13 @@
             android:orientation="vertical"
             android:padding="30dp">
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/profile_image"
+            <ImageView
+                android:id="@+id/imageView"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="50dp"
-                android:src="@drawable/profile"
-                app:civ_border_color="#009688"
-                app:civ_border_width="2dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Tap to upload image"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="12sp" />
+                app:srcCompat="@drawable/logo" />
 
             <TextView
                 android:id="@+id/textView"
@@ -54,6 +44,17 @@
                 android:layout_marginTop="30dp"
                 android:background="@drawable/design_edittext"
                 android:hint="Enter name"
+                android:paddingStart="20dp"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
+
+            <EditText
+                android:id="@+id/userId"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/design_edittext"
+                android:hint="Enter Unique ID (e.g. user123)"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
                 android:textColorHint="?android:attr/textColorHint" />
