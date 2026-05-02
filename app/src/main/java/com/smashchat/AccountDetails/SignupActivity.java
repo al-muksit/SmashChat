@@ -2,47 +2,37 @@ package com.smashchat.AccountDetails;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Models.Users;
-import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivitySignupBinding;
 
 import java.util.Objects;
 
 /**
- * SignupActivity handles the user registration process using Firebase Authentication
- * and stores user details in Firebase Realtime Database and Storage.
+ * SignupActivity handles the user registration process.
+ * It ensures a unique User ID starting with '@' and stores user details in Firebase.
  */
 public class SignupActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
-    private FirebaseStorage firebaseStorage;
-    private PreferenceManager preferenceManager;
     private ActivitySignupBinding binding;
     private ProgressDialog progressDialog;
-    private Uri selectedImage;
-    private ActivityResultLauncher<String> galleryLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,63 +50,55 @@ public class SignupActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseStorage = FirebaseStorage.getInstance();
-        preferenceManager = new PreferenceManager(this);
 
         progressDialog = new ProgressDialog(SignupActivity.this);
         progressDialog.setTitle("Creating Account");
         progressDialog.setMessage("We are creating your account. Please wait...");
 
-        // Image picker launcher
-        galleryLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
-                result -> {
-                    if (result != null) {
-                        binding.profileImage.setImageURI(result);
-                        selectedImage = result;
-                    }
-                });
-
-        binding.profileImage.setOnClickListener(v -> galleryLauncher.launch("image/*"));
-
         binding.signup.setOnClickListener(v -> {
-            String userStr = binding.username.getText().toString().trim();
+            String nameStr = binding.username.getText().toString().trim();
+            String customIdStr = binding.userId.getText().toString().trim();
             String emailStr = binding.email.getText().toString().trim();
             String passStr = binding.password.getText().toString().trim();
 
-            if (userStr.isEmpty() || emailStr.isEmpty() || passStr.isEmpty()) {
+            if (nameStr.isEmpty() || customIdStr.isEmpty() || emailStr.isEmpty() || passStr.isEmpty()) {
                 Toast.makeText(SignupActivity.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            // Ensure customId starts with @
+            final String finalCustomId = customIdStr.startsWith("@") ? customIdStr : "@" + customIdStr;
+
             progressDialog.show();
-            
-            firebaseAuth.createUserWithEmailAndPassword(emailStr, passStr)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
-                            
-                            if (selectedImage != null) {
-                                // Upload image to Firebase Storage
-                                StorageReference reference = firebaseStorage.getReference().child("Profiles").child(id);
-                                reference.putFile(selectedImage).addOnCompleteListener(storageTask -> {
-                                    if (storageTask.isSuccessful()) {
-                                        reference.getDownloadUrl().addOnSuccessListener(uri -> {
-                                            String imageUrl = uri.toString();
-                                            saveUserToDatabase(id, userStr, emailStr, passStr, imageUrl);
-                                        });
-                                    } else {
-                                        progressDialog.dismiss();
-                                        Toast.makeText(SignupActivity.this, "Image upload failed", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+
+            // Check if User ID is unique
+            firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(finalCustomId)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (snapshot.exists()) {
+                                progressDialog.dismiss();
+                                Toast.makeText(SignupActivity.this, "This User ID is already taken. Try another.", Toast.LENGTH_SHORT).show();
                             } else {
-                                saveUserToDatabase(id, userStr, emailStr, passStr, "");
+                                // Create account
+                                firebaseAuth.createUserWithEmailAndPassword(emailStr, passStr)
+                                        .addOnCompleteListener(task -> {
+                                            if (task.isSuccessful()) {
+                                                String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
+                                                saveUserToDatabase(id, nameStr, emailStr, passStr, finalCustomId);
+                                            } else {
+                                                progressDialog.dismiss();
+                                                Toast.makeText(SignupActivity.this, 
+                                                        Objects.requireNonNull(task.getException()).getMessage(), 
+                                                        Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
                             }
-                        } else {
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
                             progressDialog.dismiss();
-                            Toast.makeText(SignupActivity.this, 
-                                    Objects.requireNonNull(task.getException()).getMessage(), 
-                                    Toast.LENGTH_SHORT).show();
                         }
                     });
         });
@@ -127,13 +109,11 @@ public class SignupActivity extends AppCompatActivity {
         });
     }
 
-    private void saveUserToDatabase(String id, String username, String email, String password, String imageUrl) {
-        // Create user with a default customId (first part of email)
-        String defaultCustomId = "@" + email.split("@")[0];
+    private void saveUserToDatabase(String id, String username, String email, String password, String customId) {
         Users users = new Users(username, email, password);
         users.setUserId(id);
-        users.setProfilePic(imageUrl);
-        users.setCustomId(defaultCustomId);
+        users.setCustomId(customId);
+        users.setProfilePic(""); // Default empty
         
         firebaseDatabase.getReference().child("Users").child(id).setValue(users)
                 .addOnCompleteListener(dbTask -> {
