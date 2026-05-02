@@ -12,6 +12,7 @@ public class PreferenceManager {
     private static final String KEY_USER_NAME = "userName";
     private static final String KEY_PROFILE_PIC = "profilePic";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_DARK_MODE = "darkMode";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
@@ -19,6 +20,15 @@ public class PreferenceManager {
     public PreferenceManager(Context context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
+    }
+
+    public void setDarkMode(boolean enabled) {
+        editor.putBoolean(KEY_DARK_MODE, enabled);
+        editor.apply();
+    }
+
+    public boolean isDarkMode() {
+        return sharedPreferences.getBoolean(KEY_DARK_MODE, false);
     }
 
     public void saveUserData(String name, String email, String profilePic) {

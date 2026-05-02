@@ -128,9 +128,12 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void saveUserToDatabase(String id, String username, String email, String password, String imageUrl) {
+        // Create user with a default customId (first part of email)
+        String defaultCustomId = "@" + email.split("@")[0];
         Users users = new Users(username, email, password);
         users.setUserId(id);
         users.setProfilePic(imageUrl);
+        users.setCustomId(defaultCustomId);
         
         firebaseDatabase.getReference().child("Users").child(id).setValue(users)
                 .addOnCompleteListener(dbTask -> {

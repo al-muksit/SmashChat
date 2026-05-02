@@ -1,13 +1,14 @@
 {
   "project_info": {
     "project_number": "124679497127",
+    "firebase_url": "https://smashchat-7ed80-default-rtdb.firebaseio.com",
     "project_id": "smashchat-7ed80",
-    "storage_bucket": "smashchat-7ed80.appspot.com"
+    "storage_bucket": "smashchat-7ed80.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:124679497127:android:d6369b94e9428c3b194282",
+        "mobilesdk_app_id": "1:124679497127:android:a9e92f17fc8fef98194282",
         "android_client_info": {
           "package_name": "com.smashchat"
         }
