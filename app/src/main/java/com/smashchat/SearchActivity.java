@@ -1,7 +1,6 @@
 package com.smashchat;
 
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -73,9 +72,9 @@ public class SearchActivity extends AppCompatActivity {
             return;
         }
 
-        String lowerCaseQuery = query.toLowerCase();
+        String lowerCaseQuery = query.toLowerCase().trim();
         database.getReference().child("Users")
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+                .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         list.clear();
@@ -88,8 +87,9 @@ public class SearchActivity extends AppCompatActivity {
                                 String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
                                 String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
                                 
+                                // Show user if name or ID contains the query string
                                 if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery) || email.contains(lowerCaseQuery)) {
-                                    // Don't show current user
+                                    // Don't show current logged-in user
                                     if (!ds.getKey().equals(com.google.firebase.auth.FirebaseAuth.getInstance().getUid())) {
                                         list.add(user);
                                     }
@@ -97,16 +97,10 @@ public class SearchActivity extends AppCompatActivity {
                             }
                         }
                         adapter.notifyDataSetChanged();
-                        
-                        if (list.isEmpty()) {
-                            Toast.makeText(SearchActivity.this, "No users found", Toast.LENGTH_SHORT).show();
-                        }
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(SearchActivity.this, "Search error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
+                    public void onCancelled(@NonNull DatabaseError error) {}
                 });
     }
 }

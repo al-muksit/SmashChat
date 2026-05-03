@@ -14,8 +14,8 @@ public class PreferenceManager {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_DARK_MODE = "darkMode";
 
-    private SharedPreferences sharedPreferences;
-    private SharedPreferences.Editor editor;
+    private final SharedPreferences sharedPreferences;
+    private final SharedPreferences.Editor editor;
 
     public PreferenceManager(Context context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
