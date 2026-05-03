@@ -24,6 +24,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.smashchat.AccountDetails.SigninActivity;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.DatabaseHelper;
 import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityProfileBinding;
 import com.squareup.picasso.Picasso;
@@ -42,6 +43,7 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseDatabase firebaseDatabase;
     private FirebaseStorage firebaseStorage;
     private PreferenceManager preferenceManager;
+    private DatabaseHelper databaseHelper;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
     private ActivityResultLauncher<String> galleryLauncher;
@@ -65,6 +67,7 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
         preferenceManager = new PreferenceManager(this);
+        databaseHelper = new DatabaseHelper(this);
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Profile Update");
@@ -87,6 +90,7 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnLogout.setOnClickListener(v -> {
             firebaseAuth.signOut();
             preferenceManager.clear();
+            databaseHelper.clear();
             Intent intent = new Intent(ProfileActivity.this, SigninActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -96,6 +100,12 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadUserData() {
         String uid = firebaseAuth.getUid();
         if (uid == null) return;
+
+        // Try to load from SQLite first
+        android.graphics.Bitmap localBitmap = databaseHelper.getImage(uid);
+        if (localBitmap != null) {
+            binding.profileImage.setImageBitmap(localBitmap);
+        }
 
         firebaseDatabase.getReference().child("Users").child(uid)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -110,7 +120,8 @@ public class ProfileActivity extends AppCompatActivity {
                             binding.etCustomId.setText(user.getCustomId());
                             currentProfilePicUrl = user.getProfilePic();
 
-                            if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+                            // Load from Firebase if not in SQLite
+                            if (localBitmap == null && user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
                                 Picasso.get().load(user.getProfilePic())
                                         .placeholder(R.drawable.profile)
                                         .into(binding.profileImage);
@@ -164,6 +175,14 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void uploadImageAndSave(String uid, String customId) {
         if (selectedImage != null) {
+            // Save to SQLite
+            try {
+                android.graphics.Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                databaseHelper.saveImage(uid, bitmap);
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+
             StorageReference reference = firebaseStorage.getReference().child("Profiles").child(uid);
             reference.putFile(selectedImage).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
