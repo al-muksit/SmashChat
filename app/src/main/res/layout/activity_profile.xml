@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#31354C"
+    android:background="?attr/colorSurface"
     tools:context=".ProfileActivity">
 
     <ScrollView
@@ -42,7 +42,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="30dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/edit_text_background"
                 android:hint="Name"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
@@ -53,7 +53,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="15dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/edit_text_background"
                 android:hint="Unique User ID (e.g. @username)"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
@@ -64,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="15dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/edit_text_background"
                 android:enabled="false"
                 android:hint="Email"
                 android:paddingStart="20dp"
@@ -76,7 +76,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="15dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/edit_text_background"
                 android:hint="Phone Number"
                 android:inputType="phone"
                 android:paddingStart="20dp"
@@ -88,7 +88,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/edit_text_background"
                 android:gravity="top|start"
                 android:hint="Address"
                 android:minHeight="80dp"
@@ -96,25 +96,27 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textColorHint="?android:attr/textColorHint" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
-                android:background="#327AB3"
                 android:text="Save Profile"
                 android:textColor="#fff"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                app:backgroundTint="#009688"
+                app:cornerRadius="8dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:background="#E53935"
                 android:text="Logout"
                 android:textColor="#fff"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                app:backgroundTint="#E53935"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
     </ScrollView>

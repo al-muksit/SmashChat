@@ -22,10 +22,6 @@
             android:label="Chat"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".SearchActivity"
-            android:label="Search Users"
-            android:parentActivityName=".MainActivity" />
-        <activity
             android:name=".OtherUserProfileActivity"
             android:label="User Profile"
             android:parentActivityName=".MainActivity" />
