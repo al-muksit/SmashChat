@@ -37,10 +37,10 @@ import java.util.ArrayList;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
     private ActivityMainBinding binding;
-    private ArrayList<Users> userList = new ArrayList<>();
+    private ArrayList<Users> userList = new ArrayList<>(); // Active chats
+    private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
     private UsersAdapter usersAdapter;
     private PreferenceManager preferenceManager;
 
@@ -69,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Initialize Firebase
-        firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
 
         // Setup Toolbar
@@ -80,12 +79,78 @@ public class MainActivity extends AppCompatActivity {
         binding.toolbar.setTitleTextColor(Color.WHITE);
 
         // Setup RecyclerView
-        usersAdapter = new UsersAdapter(userList, this);
+        usersAdapter = new UsersAdapter(displayedList, this);
         binding.userRecyclerView.setAdapter(usersAdapter);
         binding.userRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Setup Search
+        binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                searchUsers(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchUsers(newText);
+                return true;
+            }
+        });
+
         // Fetch users from Firebase Realtime Database
         fetchUsers();
+    }
+
+    private void searchUsers(String query) {
+        if (query.isEmpty()) {
+            displayedList.clear();
+            displayedList.addAll(userList);
+            usersAdapter.notifyDataSetChanged();
+            updateEmptyState();
+            return;
+        }
+
+        String currentUid = FirebaseAuth.getInstance().getUid();
+        if (currentUid == null) return;
+
+        String lowerCaseQuery = query.toLowerCase().trim();
+        firebaseDatabase.getReference().child("Users")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        ArrayList<Users> results = new ArrayList<>();
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            Users user = ds.getValue(Users.class);
+                            if (user != null) {
+                                String userId = ds.getKey();
+                                user.setUserId(userId);
+                                
+                                String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
+                                String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
+                                String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
+                                
+                                // Show user if name, ID, or email contains the query string
+                                if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery) || email.contains(lowerCaseQuery)) {
+                                    // Don't show current logged-in user
+                                    if (userId != null && !userId.equals(currentUid)) {
+                                        results.add(user);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        displayedList.clear();
+                        displayedList.addAll(results);
+                        usersAdapter.notifyDataSetChanged();
+                        updateEmptyState();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(MainActivity.this, "Search failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void fetchUsers() {
@@ -99,9 +164,16 @@ public class MainActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         userList.clear();
                         if (!snapshot.exists()) {
-                            usersAdapter.notifyDataSetChanged();
+                            if (binding.searchView.getQuery().toString().isEmpty()) {
+                                displayedList.clear();
+                                usersAdapter.notifyDataSetChanged();
+                                updateEmptyState();
+                            }
                             return;
                         }
+
+                        long totalChats = snapshot.getChildrenCount();
+                        final int[] fetchedCount = {0};
 
                         for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
                             String otherUserId = chatSnapshot.getKey();
@@ -115,12 +187,30 @@ public class MainActivity extends AppCompatActivity {
                                             if (user != null) {
                                                 user.setUserId(userSnapshot.getKey());
                                                 userList.add(user);
-                                                usersAdapter.notifyDataSetChanged();
+                                            }
+                                            fetchedCount[0]++;
+                                            if (fetchedCount[0] == totalChats) {
+                                                if (binding.searchView.getQuery().toString().isEmpty()) {
+                                                    displayedList.clear();
+                                                    displayedList.addAll(userList);
+                                                    usersAdapter.notifyDataSetChanged();
+                                                    updateEmptyState();
+                                                }
                                             }
                                         }
 
                                         @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            fetchedCount[0]++;
+                                            if (fetchedCount[0] == totalChats) {
+                                                if (binding.searchView.getQuery().toString().isEmpty()) {
+                                                    displayedList.clear();
+                                                    displayedList.addAll(userList);
+                                                    usersAdapter.notifyDataSetChanged();
+                                                    updateEmptyState();
+                                                }
+                                            }
+                                        }
                                     });
                         }
                     }
@@ -128,8 +218,25 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
                         Toast.makeText(MainActivity.this, "Failed to load chats: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        updateEmptyState();
                     }
                 });
+    }
+
+    private void updateEmptyState() {
+        if (displayedList.isEmpty()) {
+            binding.emptyStateText.setVisibility(android.view.View.VISIBLE);
+            binding.userRecyclerView.setVisibility(android.view.View.GONE);
+            
+            if (!binding.searchView.getQuery().toString().isEmpty()) {
+                binding.emptyStateText.setText("No results found");
+            } else {
+                binding.emptyStateText.setText("Search people to connect");
+            }
+        } else {
+            binding.emptyStateText.setVisibility(android.view.View.GONE);
+            binding.userRecyclerView.setVisibility(android.view.View.VISIBLE);
+        }
     }
 
     @Override
@@ -163,15 +270,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.settings) {
             Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
-            return true;
-        } else if (id == R.id.logout) {
-            firebaseAuth.signOut();
-            Intent intent = new Intent(MainActivity.this, SigninActivity.class);
-            startActivity(intent);
-            finish();
-            return true;
-        } else if (id == R.id.search) {
-            startActivity(new Intent(MainActivity.this, SearchActivity.class));
             return true;
         }
         
