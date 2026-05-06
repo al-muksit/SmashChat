@@ -31,12 +31,20 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/userEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
+            android:text="email@example.com"
+            android:textSize="13sp" />
+
+        <TextView
             android:id="@+id/lastMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="?android:attr/textColorSecondary"
             android:text="@string/last_message"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
 

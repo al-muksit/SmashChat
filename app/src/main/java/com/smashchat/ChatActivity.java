@@ -74,11 +74,11 @@ public class ChatActivity extends AppCompatActivity {
         binding.chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // Mark this chat as active for both users
-        database.getReference().child("Chats").child(senderId).child(receiverId).setValue(true);
-        database.getReference().child("Chats").child(receiverId).child(senderId).setValue(true);
+        database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(true);
+        database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(true);
 
         // Fetch messages
-        database.getReference().child("chats").child(senderRoom)
+        database.getReference().child("Messages").child(senderRoom)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -105,9 +105,9 @@ public class ChatActivity extends AppCompatActivity {
             model.setTimestamp(new Date().getTime());
             binding.etMessage.setText("");
 
-            database.getReference().child("chats").child(senderRoom).push().setValue(model)
+            database.getReference().child("Messages").child(senderRoom).push().setValue(model)
                     .addOnSuccessListener(unused -> {
-                        database.getReference().child("chats").child(receiverIdRoom).push().setValue(model)
+                        database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
                                 .addOnSuccessListener(unused1 -> {});
                     });
         });

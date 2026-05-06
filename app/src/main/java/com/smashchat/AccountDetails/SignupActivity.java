@@ -72,7 +72,7 @@ public class SignupActivity extends AppCompatActivity {
             progressDialog.show();
 
             // Check if User ID is unique
-            firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(finalCustomId)
+            firebaseDatabase.getReference().child("UserProfiles").orderByChild("customId").equalTo(finalCustomId)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -115,7 +115,7 @@ public class SignupActivity extends AppCompatActivity {
         users.setCustomId(customId);
         users.setProfilePic(""); // Default empty
         
-        firebaseDatabase.getReference().child("Users").child(id).setValue(users)
+        firebaseDatabase.getReference().child("UserProfiles").child(id).setValue(users)
                 .addOnCompleteListener(dbTask -> {
                     progressDialog.dismiss();
                     if (dbTask.isSuccessful()) {

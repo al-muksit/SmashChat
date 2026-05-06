@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
     private UsersAdapter usersAdapter;
     private PreferenceManager preferenceManager;
+    private Handler searchHandler = new Handler();
+    private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,17 +86,20 @@ public class MainActivity extends AppCompatActivity {
         binding.userRecyclerView.setAdapter(usersAdapter);
         binding.userRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Setup Search
+        // Setup Search with Debouncing
         binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                searchHandler.removeCallbacks(searchRunnable);
                 searchUsers(query);
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                searchUsers(newText);
+                searchHandler.removeCallbacks(searchRunnable);
+                searchRunnable = () -> searchUsers(newText);
+                searchHandler.postDelayed(searchRunnable, 300); // 300ms delay
                 return true;
             }
         });
@@ -103,52 +109,71 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void searchUsers(String query) {
-        if (query.isEmpty()) {
-            displayedList.clear();
-            displayedList.addAll(userList);
-            usersAdapter.notifyDataSetChanged();
-            updateEmptyState();
+        String lowerCaseQuery = query.toLowerCase().trim();
+        
+        if (lowerCaseQuery.isEmpty()) {
+            runOnUiThread(() -> {
+                displayedList.clear();
+                displayedList.addAll(userList);
+                usersAdapter.notifyDataSetChanged();
+                updateEmptyState();
+            });
             return;
         }
 
         String currentUid = FirebaseAuth.getInstance().getUid();
         if (currentUid == null) return;
 
-        String lowerCaseQuery = query.toLowerCase().trim();
-        firebaseDatabase.getReference().child("Users")
+        firebaseDatabase.getReference().child("UserProfiles")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        // Check if query hasn't changed while we were fetching
+                        if (!query.equals(binding.searchView.getQuery().toString())) {
+                            return;
+                        }
+
                         ArrayList<Users> results = new ArrayList<>();
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            Users user = ds.getValue(Users.class);
-                            if (user != null) {
-                                String userId = ds.getKey();
-                                user.setUserId(userId);
-                                
-                                String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
-                                String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
-                                String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
-                                
-                                // Show user if name, ID, or email contains the query string
-                                if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery) || email.contains(lowerCaseQuery)) {
+                            try {
+                                Users user = ds.getValue(Users.class);
+                                if (user != null) {
+                                    String userId = ds.getKey();
+                                    user.setUserId(userId);
+                                    
                                     // Don't show current logged-in user
-                                    if (userId != null && !userId.equals(currentUid)) {
+                                    if (userId != null && userId.equals(currentUid)) {
+                                        continue;
+                                    }
+
+                                    String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
+                                    String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
+                                    
+                                    // Search by name or custom ID as requested
+                                    if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery)) {
                                         results.add(user);
                                     }
                                 }
+                            } catch (Exception e) {
+                                // Skip malformed data
                             }
                         }
                         
-                        displayedList.clear();
-                        displayedList.addAll(results);
-                        usersAdapter.notifyDataSetChanged();
-                        updateEmptyState();
+                        // Update UI on main thread
+                        runOnUiThread(() -> {
+                            // Verify query again before updating list
+                            if (query.equals(binding.searchView.getQuery().toString())) {
+                                displayedList.clear();
+                                displayedList.addAll(results);
+                                usersAdapter.notifyDataSetChanged();
+                                updateEmptyState();
+                            }
+                        });
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(MainActivity.this, "Search failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Search failed", Toast.LENGTH_SHORT).show());
                     }
                 });
     }
@@ -158,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentUid == null) return;
 
         // Listen for active chats for the current user
-        firebaseDatabase.getReference().child("Chats").child(currentUid)
+        firebaseDatabase.getReference().child("UserChats").child(currentUid)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -179,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                             String otherUserId = chatSnapshot.getKey();
                             
                             // Fetch user details for each active chat
-                            firebaseDatabase.getReference().child("Users").child(otherUserId)
+                            firebaseDatabase.getReference().child("UserProfiles").child(otherUserId)
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot userSnapshot) {
@@ -190,12 +215,14 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                             fetchedCount[0]++;
                                             if (fetchedCount[0] == totalChats) {
-                                                if (binding.searchView.getQuery().toString().isEmpty()) {
-                                                    displayedList.clear();
-                                                    displayedList.addAll(userList);
-                                                    usersAdapter.notifyDataSetChanged();
-                                                    updateEmptyState();
-                                                }
+                                                runOnUiThread(() -> {
+                                                    if (binding.searchView.getQuery().toString().isEmpty()) {
+                                                        displayedList.clear();
+                                                        displayedList.addAll(userList);
+                                                        usersAdapter.notifyDataSetChanged();
+                                                        updateEmptyState();
+                                                    }
+                                                });
                                             }
                                         }
 
@@ -203,12 +230,14 @@ public class MainActivity extends AppCompatActivity {
                                         public void onCancelled(@NonNull DatabaseError error) {
                                             fetchedCount[0]++;
                                             if (fetchedCount[0] == totalChats) {
-                                                if (binding.searchView.getQuery().toString().isEmpty()) {
-                                                    displayedList.clear();
-                                                    displayedList.addAll(userList);
-                                                    usersAdapter.notifyDataSetChanged();
-                                                    updateEmptyState();
-                                                }
+                                                runOnUiThread(() -> {
+                                                    if (binding.searchView.getQuery().toString().isEmpty()) {
+                                                        displayedList.clear();
+                                                        displayedList.addAll(userList);
+                                                        usersAdapter.notifyDataSetChanged();
+                                                        updateEmptyState();
+                                                    }
+                                                });
                                             }
                                         }
                                     });

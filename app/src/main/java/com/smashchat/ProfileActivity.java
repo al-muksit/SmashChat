@@ -107,7 +107,7 @@ public class ProfileActivity extends AppCompatActivity {
             binding.profileImage.setImageBitmap(localBitmap);
         }
 
-        firebaseDatabase.getReference().child("Users").child(uid)
+        firebaseDatabase.getReference().child("UserProfiles").child(uid)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -146,7 +146,7 @@ public class ProfileActivity extends AppCompatActivity {
         progressDialog.show();
 
         // Check uniqueness if User ID was changed
-        firebaseDatabase.getReference().child("Users").orderByChild("customId").equalTo(finalCustomId)
+        firebaseDatabase.getReference().child("UserProfiles").orderByChild("customId").equalTo(finalCustomId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -202,12 +202,13 @@ public class ProfileActivity extends AppCompatActivity {
     private void saveToDatabase(String uid, String customId, String imageUrl) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("userName", binding.etUserName.getText().toString().trim());
+        updates.put("email", binding.etEmail.getText().toString().trim());
         updates.put("phone", binding.etPhone.getText().toString().trim());
         updates.put("address", binding.etAddress.getText().toString().trim());
         updates.put("customId", customId);
         updates.put("profilePic", imageUrl);
 
-        firebaseDatabase.getReference().child("Users").child(uid).updateChildren(updates)
+        firebaseDatabase.getReference().child("UserProfiles").child(uid).updateChildren(updates)
                 .addOnCompleteListener(task -> {
                     progressDialog.dismiss();
                     if (task.isSuccessful()) {
