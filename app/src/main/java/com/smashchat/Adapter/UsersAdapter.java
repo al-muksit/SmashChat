@@ -42,32 +42,45 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Users users = list.get(position);
-        
-        // Load profile picture using Picasso with a placeholder
-        Picasso.get()
-                .load(users.getProfilePic())
-                .placeholder(R.drawable.profile)
-                .into(holder.imageView);
-        
-        // Set username and last message (if available)
-        holder.userName.setText(users.getUserName());
-        // For now, using a placeholder for last message
-        holder.lastMessage.setText(users.getLastMessage() != null ? users.getLastMessage() : "Tap to chat");
-
-        // Set click listener
-        holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, ChatActivity.class);
-            intent.putExtra("userId", users.getUserId());
-            intent.putExtra("userName", users.getUserName());
-            intent.putExtra("profilePic", users.getProfilePic());
+        try {
+            Users users = list.get(position);
             
-            // Add other details just in case
-            intent.putExtra("phone", users.getPhone());
-            intent.putExtra("address", users.getAddress());
+            // Load profile picture with fallback for empty/null strings
+            if (users.getProfilePic() != null && !users.getProfilePic().isEmpty()) {
+                Picasso.get()
+                        .load(users.getProfilePic())
+                        .placeholder(R.drawable.profile)
+                        .error(R.drawable.profile)
+                        .into(holder.imageView);
+            } else {
+                holder.imageView.setImageResource(R.drawable.profile);
+            }
+            
+            // Set username and email
+            holder.userName.setText(users.getUserName() != null ? users.getUserName() : "Unknown User");
+            holder.userEmail.setText(users.getEmail() != null ? users.getEmail() : "");
+            
+            // Show Custom ID and Last Message
+            String customId = users.getCustomId() != null ? users.getCustomId() : "";
+            String lastMsg = users.getLastMessage() != null ? users.getLastMessage() : "Tap to chat";
+            holder.lastMessage.setText(customId + " | " + lastMsg);
 
-            context.startActivity(intent);
-        });
+            // Set click listener
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(context, ChatActivity.class);
+                intent.putExtra("userId", users.getUserId());
+                intent.putExtra("userName", users.getUserName());
+                intent.putExtra("profilePic", users.getProfilePic());
+                
+                // Add other details just in case
+                intent.putExtra("phone", users.getPhone());
+                intent.putExtra("address", users.getAddress());
+
+                context.startActivity(intent);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -80,12 +93,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
-        TextView userName, lastMessage;
+        TextView userName, userEmail, lastMessage;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.profile_image);
             userName = itemView.findViewById(R.id.userName);
+            userEmail = itemView.findViewById(R.id.userEmail);
             lastMessage = itemView.findViewById(R.id.lastMessage);
         }
     }
