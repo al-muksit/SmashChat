@@ -9,4 +9,9 @@
     </style>
 
     <style name="Theme.SmashChat" parent="Base.Theme.SmashChat" />
+
+    <style name="ShapeAppearance.SmashChat.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

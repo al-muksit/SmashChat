@@ -5,12 +5,23 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#31354C"
+    android:background="?attr/colorSurface"
     tools:context=".OtherUserProfileActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#009688"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -18,15 +29,17 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <de.hdodenhof.circleimageview.CircleImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/profile_image"
                 android:layout_width="150dp"
                 android:layout_height="150dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="50dp"
                 android:src="@drawable/profile"
-                app:civ_border_color="#009688"
-                app:civ_border_width="3dp" />
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.SmashChat.Circle"
+                app:strokeColor="#009688"
+                app:strokeWidth="3dp" />
 
             <TextView
                 android:id="@+id/tvUserName"
@@ -34,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
                 android:textAlignment="center"
-                android:textColor="#fff"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:text="User Name" />
@@ -45,7 +58,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:textAlignment="center"
-                android:textColor="#BCBCBC"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="16sp"
                 tools:text="user@gmail.com" />
 
@@ -53,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="30dp"
-                android:background="#4F5467" />
+                android:background="?attr/colorOutline" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -72,7 +85,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="15dp"
-                    android:textColor="#fff"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     tools:text="+123456789" />
             </LinearLayout>
@@ -94,20 +107,21 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="15dp"
-                    android:textColor="#fff"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     tools:text="User Address Goes Here" />
             </LinearLayout>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="40dp"
-                android:background="#327AB3"
                 android:text="Send Message"
                 android:textColor="#fff"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                app:backgroundTint="#009688"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
     </ScrollView>

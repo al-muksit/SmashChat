@@ -121,10 +121,15 @@ public class ProfileActivity extends AppCompatActivity {
                             currentProfilePicUrl = user.getProfilePic();
 
                             // Load from Firebase if not in SQLite
-                            if (localBitmap == null && user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
-                                Picasso.get().load(user.getProfilePic())
-                                        .placeholder(R.drawable.profile)
-                                        .into(binding.profileImage);
+                            if (localBitmap == null) {
+                                if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+                                    Picasso.get().load(user.getProfilePic())
+                                            .placeholder(R.drawable.profile)
+                                            .error(R.drawable.profile)
+                                            .into(binding.profileImage);
+                                } else {
+                                    binding.profileImage.setImageResource(R.drawable.profile);
+                                }
                             }
                         }
                     }

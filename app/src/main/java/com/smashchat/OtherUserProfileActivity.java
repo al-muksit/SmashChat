@@ -40,6 +40,12 @@ public class OtherUserProfileActivity extends AppCompatActivity {
         String address = getIntent().getStringExtra("address");
         String profilePic = getIntent().getStringExtra("profilePic");
 
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(name);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         // Display data
         binding.tvUserName.setText(name);
         binding.tvEmail.setText(email);
@@ -49,7 +55,10 @@ public class OtherUserProfileActivity extends AppCompatActivity {
         if (profilePic != null && !profilePic.isEmpty()) {
             Picasso.get().load(profilePic)
                     .placeholder(R.drawable.profile)
+                    .error(R.drawable.profile)
                     .into(binding.profileImage);
+        } else {
+            binding.profileImage.setImageResource(R.drawable.profile);
         }
 
         binding.btnMessage.setOnClickListener(v -> {
@@ -59,5 +68,11 @@ public class OtherUserProfileActivity extends AppCompatActivity {
             chatIntent.putExtra("profilePic", profilePic);
             startActivity(chatIntent);
         });
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        getOnBackPressedDispatcher().onBackPressed();
+        return true;
     }
 }
