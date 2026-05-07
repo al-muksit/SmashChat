@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace 'com.smashchat'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.smashchat"
@@ -68,4 +68,10 @@ android {
         ignoreWarnings true
         quiet true
     }
+}
+dependencies {
+    implementation libs.activity.ktx
+    implementation libs.appcompat
+    implementation libs.constraintlayout
+    implementation libs.material
 }
