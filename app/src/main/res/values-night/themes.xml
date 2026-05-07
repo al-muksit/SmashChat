@@ -7,4 +7,9 @@
         <item name="colorSurfaceVariant">#3D425C</item>
         <item name="android:textColorHint">#BDBDBD</item>
     </style>
+
+    <style name="ShapeAppearance.SmashChat.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

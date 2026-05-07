@@ -1,6 +1,10 @@
 package com.smashchat;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -18,10 +22,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Adapter.ChatAdapter;
 import com.smashchat.Models.Messages;
+import com.smashchat.Models.Users;
 import com.smashchat.databinding.ActivityChatBinding;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * ChatActivity handles the one-to-one messaging logic between two users.
@@ -37,6 +44,7 @@ public class ChatActivity extends AppCompatActivity {
     private String receiverIdRoom;
     private ArrayList<Messages> messageList;
     private ChatAdapter chatAdapter;
+    private Users receiverUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +66,55 @@ public class ChatActivity extends AppCompatActivity {
         senderId = auth.getUid();
         receiverId = getIntent().getStringExtra("userId");
         String userName = getIntent().getStringExtra("userName");
+        String profilePic = getIntent().getStringExtra("profilePic");
 
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(userName);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+
+        // Custom Toolbar Setup
+        View toolbarView = binding.toolbar.findViewById(R.id.chatHeaderSection);
+        TextView tvUserName = toolbarView.findViewById(R.id.userName);
+        ImageView ivProfile = toolbarView.findViewById(R.id.profile_image);
+        ImageView ivBack = toolbarView.findViewById(R.id.backArrow);
+
+        tvUserName.setText(userName);
+        if (profilePic != null && !profilePic.isEmpty()) {
+            Picasso.get().load(profilePic).placeholder(R.drawable.profile).into(ivProfile);
+        } else {
+            ivProfile.setImageResource(R.drawable.profile);
+        }
+
+        ivBack.setOnClickListener(v -> onBackPressed());
+
+        // Fetch full receiver details for profile click
+        database.getReference().child("UserProfiles").child(receiverId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        receiverUser = snapshot.getValue(Users.class);
+                        if (receiverUser != null) {
+                            receiverUser.setUserId(snapshot.getKey());
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+
+        toolbarView.setOnClickListener(v -> {
+            if (receiverUser != null) {
+                Intent intent = new Intent(ChatActivity.this, OtherUserProfileActivity.class);
+                intent.putExtra("userId", receiverUser.getUserId());
+                intent.putExtra("userName", receiverUser.getUserName());
+                intent.putExtra("email", receiverUser.getEmail());
+                intent.putExtra("phone", receiverUser.getPhone());
+                intent.putExtra("address", receiverUser.getAddress());
+                intent.putExtra("profilePic", receiverUser.getProfilePic());
+                startActivity(intent);
+            }
+        });
 
         senderRoom = senderId + receiverId;
         receiverIdRoom = receiverId + senderId;
@@ -115,7 +166,7 @@ public class ChatActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        getOnBackPressedDispatcher().onBackPressed();
         return true;
     }
 }
