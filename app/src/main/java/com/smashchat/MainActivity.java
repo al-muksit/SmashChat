@@ -53,10 +53,17 @@ public class MainActivity extends AppCompatActivity {
         
         preferenceManager = new PreferenceManager(this);
         // Apply theme before setContentView
-        if (preferenceManager.isDarkMode()) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        int currentTheme = preferenceManager.getDarkModeTheme();
+        switch (currentTheme) {
+            case PreferenceManager.THEME_OFF:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case PreferenceManager.THEME_ON:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case PreferenceManager.THEME_SYSTEM:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
         }
 
         // Initializing View Binding
@@ -272,21 +279,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
-
-        MenuItem themeItem = menu.findItem(R.id.dark_mode_toggle);
-        SwitchCompat themeSwitch = (SwitchCompat) themeItem.getActionView().findViewById(R.id.theme_switch);
-        
-        themeSwitch.setChecked(preferenceManager.isDarkMode());
-        
-        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            preferenceManager.setDarkMode(isChecked);
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-            }
-        });
-
         return true;
     }
 
@@ -298,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, ProfileActivity.class));
             return true;
         } else if (id == R.id.settings) {
-            Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             return true;
         }
         

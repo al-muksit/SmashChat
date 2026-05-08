@@ -37,8 +37,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         binding.btnActiveStatus.setOnClickListener(v -> {
-            // Activity for Active Status (assuming ActiveStatusActivity exists or will be made)
-            // startActivity(new Intent(SettingsActivity.this, ActiveStatusActivity.class));
+            startActivity(new Intent(SettingsActivity.this, ActiveStatusActivity.class));
         });
 
         binding.btnDarkMode.setOnClickListener(v -> {

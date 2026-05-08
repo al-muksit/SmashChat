@@ -1,24 +1,80 @@
 package com.smashchat;
 
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.smashchat.Utils.PreferenceManager;
+import com.smashchat.databinding.ActivityDarkModeBinding;
+
 public class DarkModeActivity extends AppCompatActivity {
+
+    private ActivityDarkModeBinding binding;
+    private PreferenceManager preferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_dark_mode);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        binding = ActivityDarkModeBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        preferenceManager = new PreferenceManager(this);
+
+        // Toolbar Setup
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Dark Mode");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
+        updateUI();
+
+        binding.btnOn.setOnClickListener(v -> applyTheme(PreferenceManager.THEME_ON));
+        binding.btnOff.setOnClickListener(v -> applyTheme(PreferenceManager.THEME_OFF));
+        binding.btnSystem.setOnClickListener(v -> applyTheme(PreferenceManager.THEME_SYSTEM));
+    }
+
+    private void updateUI() {
+        int currentTheme = preferenceManager.getDarkModeTheme();
+        
+        binding.checkOn.setVisibility(currentTheme == PreferenceManager.THEME_ON ? View.VISIBLE : View.GONE);
+        binding.checkOff.setVisibility(currentTheme == PreferenceManager.THEME_OFF ? View.VISIBLE : View.GONE);
+        binding.checkSystem.setVisibility(currentTheme == PreferenceManager.THEME_SYSTEM ? View.VISIBLE : View.GONE);
+    }
+
+    private void applyTheme(int mode) {
+        preferenceManager.setDarkModeTheme(mode);
+        updateUI();
+
+        switch (mode) {
+            case PreferenceManager.THEME_OFF:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case PreferenceManager.THEME_ON:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case PreferenceManager.THEME_SYSTEM:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
+        }
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        getOnBackPressedDispatcher().onBackPressed();
+        return true;
     }
 }
