@@ -12,7 +12,10 @@ public class PreferenceManager {
     private static final String KEY_USER_NAME = "userName";
     private static final String KEY_PROFILE_PIC = "profilePic";
     private static final String KEY_EMAIL = "email";
-    private static final String KEY_DARK_MODE = "darkMode";
+    private static final String KEY_DARK_MODE = "darkMode_v2"; // Using new key for int mode
+    public static final int THEME_OFF = 0;
+    public static final int THEME_ON = 1;
+    public static final int THEME_SYSTEM = 2;
 
     private final SharedPreferences sharedPreferences;
     private final SharedPreferences.Editor editor;
@@ -22,13 +25,21 @@ public class PreferenceManager {
         editor = sharedPreferences.edit();
     }
 
-    public void setDarkMode(boolean enabled) {
-        editor.putBoolean(KEY_DARK_MODE, enabled);
+    public void setDarkModeTheme(int mode) {
+        editor.putInt(KEY_DARK_MODE, mode);
         editor.apply();
     }
 
+    public int getDarkModeTheme() {
+        return sharedPreferences.getInt(KEY_DARK_MODE, THEME_SYSTEM); // Default to System
+    }
+
     public boolean isDarkMode() {
-        return sharedPreferences.getBoolean(KEY_DARK_MODE, false);
+        int mode = getDarkModeTheme();
+        if (mode == THEME_SYSTEM) {
+            return false; // This is used for legacy checks, actual theme applied via AppCompatDelegate
+        }
+        return mode == THEME_ON;
     }
 
     public void saveUserData(String name, String email, String profilePic) {
@@ -52,5 +63,9 @@ public class PreferenceManager {
 
     public void clear() {
         editor.clear().apply();
+    }
+
+    public void setDarkMode(boolean isChecked) {
+
     }
 }
