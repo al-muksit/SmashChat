@@ -15,17 +15,35 @@
         android:src="@drawable/baseline_arrow_back_24"
         app:tint="@color/white" />
 
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/profile_image"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+    <RelativeLayout
+        android:id="@+id/profileContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_toEndOf="@id/backArrow"
-        android:src="@drawable/profile"
-        android:scaleType="centerCrop"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.SmashChat.Circle"
-        app:strokeColor="@color/white"
-        app:strokeWidth="1dp" />
+        android:layout_toEndOf="@id/backArrow">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/profile_image"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/profile"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.SmashChat.Circle"
+            app:strokeColor="@color/white"
+            app:strokeWidth="1dp" />
+
+        <View
+            android:id="@+id/statusIndicator"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_alignBottom="@id/profile_image"
+            android:layout_alignEnd="@id/profile_image"
+            android:layout_marginEnd="1dp"
+            android:layout_marginBottom="1dp"
+            android:background="@drawable/active_dot"
+            android:visibility="gone" />
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/userName"
@@ -33,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_marginStart="12dp"
-        android:layout_toEndOf="@id/profile_image"
+        android:layout_toEndOf="@id/profileContainer"
         android:text="User Name"
         android:textColor="@color/white"
         android:textSize="18sp"
