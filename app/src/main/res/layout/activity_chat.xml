@@ -32,7 +32,7 @@
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="80sp"
         android:background="#3D425C"
         android:orientation="horizontal"
         android:padding="8dp"
@@ -41,22 +41,22 @@
         <EditText
             android:id="@+id/etMessage"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="60sp"
             android:layout_weight="1"
             android:background="@drawable/design_edittext"
             android:hint="Type a message..."
             android:padding="12dp"
-            android:textColor="?attr/colorOnSurface"
-            android:textColorHint="?android:attr/textColorHint" />
+            android:textColor="@color/black"
+            android:textColorHint="@color/grey" />
 
         <ImageView
             android:id="@+id/btnSend"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:padding="8dp"
+            android:layout_width="60sp"
+            android:layout_height="60sp"
+            android:layout_marginStart="2sp"
+            android:padding="2sp"
             android:src="@android:drawable/ic_menu_send"
-            app:tint="#009688" />
+            app:tint="@color/appDefaultColor" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

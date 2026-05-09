@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.smashchat.ChatActivity;
 import com.smashchat.Models.Users;
-import com.smashchat.OtherUserProfileActivity;
 import com.smashchat.R;
 import com.squareup.picasso.Picasso;
 
@@ -56,25 +55,33 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
                 holder.imageView.setImageResource(R.drawable.profile);
             }
             
-            // Set username and email
+            // Set username and status text
             holder.userName.setText(users.getUserName() != null ? users.getUserName() : "Unknown User");
-            holder.userEmail.setText(users.getEmail() != null ? users.getEmail() : "");
+            String status = users.getStatus() != null ? users.getStatus() : "Offline";
+            holder.userStatus.setText(status);
             
-            // Show Custom ID and Last Message
-            String customId = users.getCustomId() != null ? users.getCustomId() : "";
-            String lastMsg = users.getLastMessage() != null ? users.getLastMessage() : "Tap to chat";
-            holder.lastMessage.setText(customId + " | " + lastMsg);
+            // Show/Hide Green Dot
+            if ("Active".equals(status)) {
+                holder.statusIndicator.setVisibility(View.VISIBLE);
+            } else {
+                holder.statusIndicator.setVisibility(View.GONE);
+            }
 
             // Set click listener
             holder.itemView.setOnClickListener(v -> {
+                String userId = users.getUserId();
+                if (userId == null) return;
+
                 Intent intent = new Intent(context, ChatActivity.class);
-                intent.putExtra("userId", users.getUserId());
+                intent.putExtra("userId", userId);
                 intent.putExtra("userName", users.getUserName());
                 intent.putExtra("profilePic", users.getProfilePic());
                 
-                // Add other details just in case
+                // Add other details for ChatToolbar -> OtherUserProfile navigation
+                intent.putExtra("email", users.getEmail());
                 intent.putExtra("phone", users.getPhone());
                 intent.putExtra("address", users.getAddress());
+                intent.putExtra("customId", users.getCustomId());
 
                 context.startActivity(intent);
             });
@@ -93,14 +100,15 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
-        TextView userName, userEmail, lastMessage;
+        TextView userName, userStatus;
+        View statusIndicator;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.profile_image);
             userName = itemView.findViewById(R.id.userName);
-            userEmail = itemView.findViewById(R.id.userEmail);
-            lastMessage = itemView.findViewById(R.id.lastMessage);
+            userStatus = itemView.findViewById(R.id.userStatusText);
+            statusIndicator = itemView.findViewById(R.id.statusIndicator);
         }
     }
 }

@@ -33,9 +33,6 @@ import com.smashchat.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
 
-/**
- * MainActivity is the primary screen that displays the list of users fetched from Firebase.
- */
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseDatabase firebaseDatabase;
@@ -113,6 +110,27 @@ public class MainActivity extends AppCompatActivity {
 
         // Fetch users from Firebase Realtime Database
         fetchUsers();
+    }
+
+    private void updateStatus(String status) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            if (preferenceManager.isActiveStatusEnabled() || status.equals("Offline")) {
+                firebaseDatabase.getReference().child("UserProfiles").child(uid).child("status").setValue(status);
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateStatus("Active");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        updateStatus("Offline");
     }
 
     private void searchUsers(String query) {

@@ -13,6 +13,7 @@ public class PreferenceManager {
     private static final String KEY_PROFILE_PIC = "profilePic";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_DARK_MODE = "darkMode_v2"; // Using new key for int mode
+    private static final String KEY_ACTIVE_STATUS = "activeStatus";
     public static final int THEME_OFF = 0;
     public static final int THEME_ON = 1;
     public static final int THEME_SYSTEM = 2;
@@ -40,6 +41,15 @@ public class PreferenceManager {
             return false; // This is used for legacy checks, actual theme applied via AppCompatDelegate
         }
         return mode == THEME_ON;
+    }
+
+    public void setActiveStatusEnabled(boolean enabled) {
+        editor.putBoolean(KEY_ACTIVE_STATUS, enabled);
+        editor.apply();
+    }
+
+    public boolean isActiveStatusEnabled() {
+        return sharedPreferences.getBoolean(KEY_ACTIVE_STATUS, true); // Default to ON
     }
 
     public void saveUserData(String name, String email, String profilePic) {

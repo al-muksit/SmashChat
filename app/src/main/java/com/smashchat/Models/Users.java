@@ -13,11 +13,12 @@ public class Users {
     private String phone;
     private String address;
     private String customId;
+    private String status;
 
     /**
      * Full constructor for a user.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId) {
+    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
@@ -27,6 +28,7 @@ public class Users {
         this.phone = phone;
         this.address = address;
         this.customId = customId;
+        this.status = status;
     }
 
     /**
@@ -42,9 +44,18 @@ public class Users {
         this.userName = userName;
         this.email = email;
         this.password = password;
+        this.status = "Offline";
     }
 
     // Getters and Setters
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public String getProfilePic() {
         return profilePic;
