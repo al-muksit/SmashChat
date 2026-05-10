@@ -2,6 +2,9 @@ package com.smashchat;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -9,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -221,16 +225,105 @@ public class ChatActivity extends AppCompatActivity {
             String message = binding.etMessage.getText().toString().trim();
             if (message.isEmpty()) return;
 
-            final Messages model = new Messages(senderId, message);
-            model.setTimestamp(new Date().getTime());
-            binding.etMessage.setText("");
+            // Check if blocked before sending
+            database.getReference().child("BlockedUsers").child(senderId).child(receiverId)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (snapshot.exists()) {
+                                Toast.makeText(ChatActivity.this, "You have blocked this user", Toast.LENGTH_SHORT).show();
+                            } else {
+                                // Check if the receiver blocked the sender
+                                database.getReference().child("BlockedUsers").child(receiverId).child(senderId)
+                                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot snapshot2) {
+                                                if (snapshot2.exists()) {
+                                                    Toast.makeText(ChatActivity.this, "You cannot send messages to this user", Toast.LENGTH_SHORT).show();
+                                                } else {
+                                                    sendMessage(message);
+                                                }
+                                            }
 
-            database.getReference().child("Messages").child(senderRoom).push().setValue(model)
-                    .addOnSuccessListener(unused -> {
-                        database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
-                                .addOnSuccessListener(unused1 -> {});
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError error) {}
+                                        });
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
                     });
         });
+    }
+
+    private void sendMessage(String message) {
+        final Messages model = new Messages(senderId, message);
+        model.setTimestamp(new Date().getTime());
+        binding.etMessage.setText("");
+
+        database.getReference().child("Messages").child(senderRoom).push().setValue(model)
+                .addOnSuccessListener(unused -> {
+                    database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
+                            .addOnSuccessListener(unused1 -> {});
+                });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.chat_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.home_menu) {
+            Intent intent = new Intent(ChatActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+            return true;
+        } else if (id == R.id.notification_menu) {
+            Toast.makeText(this, "Notifications settings coming soon", Toast.LENGTH_SHORT).show();
+            return true;
+        } else if (id == R.id.delete_chat_menu) {
+            showDeleteConfirmation();
+            return true;
+        } else if (id == R.id.block_menu) {
+            showBlockConfirmation();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showDeleteConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Chat")
+                .setMessage("Are you sure you want to delete this chat permanently?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    database.getReference().child("Messages").child(senderRoom).removeValue();
+                    database.getReference().child("UserChats").child(senderId).child(receiverId).removeValue();
+                    Toast.makeText(ChatActivity.this, "Chat deleted", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showBlockConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Block User")
+                .setMessage("Are you sure you want to block this user?")
+                .setPositiveButton("Block", (dialog, which) -> {
+                    database.getReference().child("BlockedUsers").child(senderId).child(receiverId).setValue(true);
+                    Toast.makeText(ChatActivity.this, "User blocked", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
