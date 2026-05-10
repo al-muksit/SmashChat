@@ -33,14 +33,13 @@ import com.smashchat.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     private FirebaseDatabase firebaseDatabase;
     private ActivityMainBinding binding;
     private ArrayList<Users> userList = new ArrayList<>(); // Active chats
     private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
     private UsersAdapter usersAdapter;
-    private PreferenceManager preferenceManager;
     private Handler searchHandler = new Handler();
     private Runnable searchRunnable;
 
@@ -48,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        preferenceManager = new PreferenceManager(this);
         // Apply theme before setContentView
         int currentTheme = preferenceManager.getDarkModeTheme();
         switch (currentTheme) {
@@ -110,27 +108,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Fetch users from Firebase Realtime Database
         fetchUsers();
-    }
-
-    private void updateStatus(String status) {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid != null) {
-            if (preferenceManager.isActiveStatusEnabled() || status.equals("Offline")) {
-                firebaseDatabase.getReference().child("UserProfiles").child(uid).child("status").setValue(status);
-            }
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        updateStatus("Active");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        updateStatus("Offline");
     }
 
     private void searchUsers(String query) {
@@ -222,24 +199,34 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
 
-                        long totalChats = snapshot.getChildrenCount();
-                        final int[] fetchedCount = {0};
-
                         for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
                             String otherUserId = chatSnapshot.getKey();
                             
-                            // Fetch user details for each active chat
+                            // Listen for real-time profile/status updates for each active chat
                             firebaseDatabase.getReference().child("UserProfiles").child(otherUserId)
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    .addValueEventListener(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot userSnapshot) {
                                             Users user = userSnapshot.getValue(Users.class);
                                             if (user != null) {
                                                 user.setUserId(userSnapshot.getKey());
-                                                userList.add(user);
-                                            }
-                                            fetchedCount[0]++;
-                                            if (fetchedCount[0] == totalChats) {
+                                                
+                                                // Update or add user in userList
+                                                int index = -1;
+                                                for (int i = 0; i < userList.size(); i++) {
+                                                    if (userList.get(i).getUserId().equals(user.getUserId())) {
+                                                        index = i;
+                                                        break;
+                                                    }
+                                                }
+                                                
+                                                if (index != -1) {
+                                                    userList.set(index, user);
+                                                } else {
+                                                    userList.add(user);
+                                                }
+
+                                                // If not searching, update displayed list
                                                 runOnUiThread(() -> {
                                                     if (binding.searchView.getQuery().toString().isEmpty()) {
                                                         displayedList.clear();
@@ -252,19 +239,7 @@ public class MainActivity extends AppCompatActivity {
                                         }
 
                                         @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                            fetchedCount[0]++;
-                                            if (fetchedCount[0] == totalChats) {
-                                                runOnUiThread(() -> {
-                                                    if (binding.searchView.getQuery().toString().isEmpty()) {
-                                                        displayedList.clear();
-                                                        displayedList.addAll(userList);
-                                                        usersAdapter.notifyDataSetChanged();
-                                                        updateEmptyState();
-                                                    }
-                                                });
-                                            }
-                                        }
+                                        public void onCancelled(@NonNull DatabaseError error) {}
                                     });
                         }
                     }

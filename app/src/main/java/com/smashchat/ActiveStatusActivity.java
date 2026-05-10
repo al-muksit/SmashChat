@@ -13,10 +13,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityActiveStatusBinding;
 
-public class ActiveStatusActivity extends AppCompatActivity {
+public class ActiveStatusActivity extends BaseActivity {
 
     private ActivityActiveStatusBinding binding;
-    private PreferenceManager preferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,8 +29,6 @@ public class ActiveStatusActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        preferenceManager = new PreferenceManager(this);
 
         // Toolbar Setup
         setSupportActionBar(binding.toolbar);

@@ -37,7 +37,7 @@ import java.util.Objects;
 /**
  * ChatActivity handles the one-to-one messaging logic between two users.
  */
-public class ChatActivity extends AppCompatActivity {
+public class ChatActivity extends BaseActivity {
 
     private ActivityChatBinding binding;
     private FirebaseDatabase database;
