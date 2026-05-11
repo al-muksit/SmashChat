@@ -17,6 +17,9 @@
         android:theme="@style/Theme.SmashChat"
         tools:targetApi="31">
         <activity
+            android:name=".BlockListActivity"
+            android:exported="false" />
+        <activity
             android:name=".ActiveStatusActivity"
             android:exported="false" />
         <activity
