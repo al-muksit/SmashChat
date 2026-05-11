@@ -36,13 +36,12 @@ import java.util.Map;
  * ProfileActivity allows users to view and edit their profile information independently.
  * It manages profile picture updates and ensures a unique User ID.
  */
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends BaseActivity {
 
     private ActivityProfileBinding binding;
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
     private FirebaseStorage firebaseStorage;
-    private PreferenceManager preferenceManager;
     private DatabaseHelper databaseHelper;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
@@ -66,7 +65,6 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
-        preferenceManager = new PreferenceManager(this);
         databaseHelper = new DatabaseHelper(this);
 
         progressDialog = new ProgressDialog(this);

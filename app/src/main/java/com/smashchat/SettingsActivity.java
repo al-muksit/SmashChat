@@ -12,7 +12,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.smashchat.databinding.ActivitySettingsBinding;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends BaseActivity {
 
     private ActivitySettingsBinding binding;
 

@@ -15,7 +15,7 @@ import com.squareup.picasso.Picasso;
 /**
  * OtherUserProfileActivity displays the profile details of another user.
  */
-public class OtherUserProfileActivity extends AppCompatActivity {
+public class OtherUserProfileActivity extends BaseActivity {
 
     private ActivityOtherUserProfileBinding binding;
 
@@ -39,6 +39,7 @@ public class OtherUserProfileActivity extends AppCompatActivity {
         String phone = getIntent().getStringExtra("phone");
         String address = getIntent().getStringExtra("address");
         String profilePic = getIntent().getStringExtra("profilePic");
+        String customId = getIntent().getStringExtra("customId");
 
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
@@ -51,6 +52,7 @@ public class OtherUserProfileActivity extends AppCompatActivity {
         binding.tvEmail.setText(email);
         binding.tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "No phone number");
         binding.tvAddress.setText(address != null && !address.isEmpty() ? address : "No address provided");
+        binding.tvCustomId.setText(customId != null && !customId.isEmpty() ? customId : "No ID provided");
 
         if (profilePic != null && !profilePic.isEmpty()) {
             Picasso.get().load(profilePic)

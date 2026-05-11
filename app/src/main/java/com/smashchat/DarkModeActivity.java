@@ -13,10 +13,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityDarkModeBinding;
 
-public class DarkModeActivity extends AppCompatActivity {
+public class DarkModeActivity extends BaseActivity {
 
     private ActivityDarkModeBinding binding;
-    private PreferenceManager preferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,8 +29,6 @@ public class DarkModeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        preferenceManager = new PreferenceManager(this);
 
         // Toolbar Setup
         setSupportActionBar(binding.toolbar);
