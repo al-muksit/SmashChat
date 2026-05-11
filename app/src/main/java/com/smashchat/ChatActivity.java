@@ -3,7 +3,6 @@ package com.smashchat;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -13,7 +12,6 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -32,7 +30,6 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Objects;
 
 /**
  * ChatActivity handles the one-to-one messaging logic between two users.
@@ -285,7 +282,7 @@ public class ChatActivity extends BaseActivity {
             startActivity(intent);
             finish();
             return true;
-        } else if (id == R.id.notification_menu) {
+        } else if (id == R.id.mute_menu) {
             Toast.makeText(this, "Notifications settings coming soon", Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.delete_chat_menu) {
@@ -303,7 +300,7 @@ public class ChatActivity extends BaseActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Chat")
                 .setMessage("Are you sure you want to delete this chat permanently?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setPositiveButton("Confirm", (dialog, which) -> {
                     database.getReference().child("Messages").child(senderRoom).removeValue();
                     database.getReference().child("UserChats").child(senderId).child(receiverId).removeValue();
                     Toast.makeText(ChatActivity.this, "Chat deleted", Toast.LENGTH_SHORT).show();

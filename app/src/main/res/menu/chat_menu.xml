@@ -9,8 +9,8 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/notification_menu"
-        android:title="Notification"
+        android:id="@+id/mute_menu"
+        android:title="Mute"
         app:showAsAction="never" />
 
     <item
