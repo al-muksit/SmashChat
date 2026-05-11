@@ -194,9 +194,10 @@ public class ChatActivity extends BaseActivity {
             }
         });
 
-        // Mark this chat as active for both users
-        database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(true);
-        database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(true);
+        // Mark this chat as active for both users with current timestamp for sorting
+        long currentTimestamp = new Date().getTime();
+        database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(currentTimestamp);
+        database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(currentTimestamp);
 
         // Fetch messages
         database.getReference().child("Messages").child(senderRoom)
@@ -255,14 +256,19 @@ public class ChatActivity extends BaseActivity {
     }
 
     private void sendMessage(String message) {
+        long currentTimestamp = new Date().getTime();
         final Messages model = new Messages(senderId, message);
-        model.setTimestamp(new Date().getTime());
+        model.setTimestamp(currentTimestamp);
         binding.etMessage.setText("");
 
         database.getReference().child("Messages").child(senderRoom).push().setValue(model)
                 .addOnSuccessListener(unused -> {
                     database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
-                            .addOnSuccessListener(unused1 -> {});
+                            .addOnSuccessListener(unused1 -> {
+                                // Update last interaction time for both users to trigger sorting in MainActivity
+                                database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(currentTimestamp);
+                                database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(currentTimestamp);
+                            });
                 });
     }
 

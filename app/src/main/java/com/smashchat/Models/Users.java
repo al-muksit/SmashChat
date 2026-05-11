@@ -14,6 +14,7 @@ public class Users {
     private String address;
     private String customId;
     private String status;
+    private long lastMessageTime;
 
     /**
      * Full constructor for a user.
@@ -32,6 +33,23 @@ public class Users {
     }
 
     /**
+     * Full constructor for a user including lastMessageTime.
+     */
+    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime) {
+        this.profilePic = profilePic;
+        this.userName = userName;
+        this.email = email;
+        this.password = password;
+        this.userId = userId;
+        this.lastMessage = lastMessage;
+        this.phone = phone;
+        this.address = address;
+        this.customId = customId;
+        this.status = status;
+        this.lastMessageTime = lastMessageTime;
+    }
+
+    /**
      * Default constructor required for calls to DataSnapshot.getValue(Users.class)
      */
     public Users() {
@@ -45,9 +63,18 @@ public class Users {
         this.email = email;
         this.password = password;
         this.status = "Offline";
+        this.lastMessageTime = 0;
     }
 
     // Getters and Setters
+
+    public long getLastMessageTime() {
+        return lastMessageTime;
+    }
+
+    public void setLastMessageTime(long lastMessageTime) {
+        this.lastMessageTime = lastMessageTime;
+    }
 
     public String getStatus() {
         return status;

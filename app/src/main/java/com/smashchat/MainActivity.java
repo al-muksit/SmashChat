@@ -211,6 +211,12 @@ public class MainActivity extends BaseActivity {
                                             if (user != null) {
                                                 user.setUserId(userSnapshot.getKey());
                                                 
+                                                // Get the last interaction timestamp from UserChats for sorting
+                                                Object timestampObj = chatSnapshot.getValue();
+                                                if (timestampObj instanceof Long) {
+                                                    user.setLastMessageTime((Long) timestampObj);
+                                                }
+                                                
                                                 // Update or add user in userList
                                                 int index = -1;
                                                 for (int i = 0; i < userList.size(); i++) {
@@ -225,6 +231,10 @@ public class MainActivity extends BaseActivity {
                                                 } else {
                                                     userList.add(user);
                                                 }
+
+                                                // Sort the list by last interaction time (descending)
+                                                java.util.Collections.sort(userList, (u1, u2) -> 
+                                                        Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
 
                                                 // If not searching, update displayed list
                                                 runOnUiThread(() -> {
