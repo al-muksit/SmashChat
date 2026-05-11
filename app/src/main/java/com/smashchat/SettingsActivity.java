@@ -2,7 +2,6 @@ package com.smashchat;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,19 +29,20 @@ public class SettingsActivity extends BaseActivity {
         });
 
         // Toolbar Setup
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(binding.settingsBar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Settings");
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        binding.btnActiveStatus.setOnClickListener(v -> {
-            startActivity(new Intent(SettingsActivity.this, ActiveStatusActivity.class));
-        });
+        binding.backArrow.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        binding.btnDarkMode.setOnClickListener(v -> {
-            startActivity(new Intent(SettingsActivity.this, DarkModeActivity.class));
-        });
+        binding.btnActiveStatus.setOnClickListener(v -> 
+            startActivity(new Intent(SettingsActivity.this, ActiveStatusActivity.class))
+        );
+
+        binding.btnDarkMode.setOnClickListener(v -> 
+            startActivity(new Intent(SettingsActivity.this, DarkModeActivity.class))
+        );
     }
 
     @Override
