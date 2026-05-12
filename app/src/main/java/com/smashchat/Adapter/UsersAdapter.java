@@ -59,12 +59,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
             holder.userName.setText(users.getUserName() != null ? users.getUserName() : "Unknown User");
             String status = users.getStatus() != null ? users.getStatus() : "Offline";
             holder.userStatus.setText(status);
+            holder.userStatus.setVisibility(View.VISIBLE);
 
             // Highlight unread messages
             if (!users.isRead()) {
                 holder.userName.setTypeface(null, android.graphics.Typeface.BOLD);
                 holder.userStatus.setTypeface(null, android.graphics.Typeface.BOLD);
-                
+
                 android.util.TypedValue typedValue = new android.util.TypedValue();
                 if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)) {
                     holder.userName.setTextColor(typedValue.data);
@@ -73,7 +74,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
             } else {
                 holder.userName.setTypeface(null, android.graphics.Typeface.NORMAL);
                 holder.userStatus.setTypeface(null, android.graphics.Typeface.NORMAL);
-                
+
                 android.util.TypedValue typedValue = new android.util.TypedValue();
                 // Reset Name to OnSurface
                 if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)) {

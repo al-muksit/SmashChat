@@ -38,7 +38,7 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.sample_show_user, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.sample_block_user, parent, false);
         return new ViewHolder(view);
     }
 
@@ -46,18 +46,25 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Users user = list.get(position);
 
-        Picasso.get().load(user.getProfilePic()).placeholder(R.drawable.profile).into(holder.image);
-        holder.userName.setText(user.getUserName());
-        
-        // Show @userID (customId) instead of status
-        if (user.getCustomId() != null && !user.getCustomId().isEmpty()) {
-            holder.userStatusText.setText("@" + user.getCustomId());
+        if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+            Picasso.get().load(user.getProfilePic()).placeholder(R.drawable.profile).into(holder.image);
         } else {
-            holder.userStatusText.setText("No User ID");
+            holder.image.setImageResource(R.drawable.profile);
         }
 
-        // Status indicator should be hidden for blocked users in this list
-        holder.statusIndicator.setVisibility(View.GONE);
+        holder.userName.setText(user.getUserName());
+        
+        // Show @userID (customId) - ensure only one '@'
+        String customId = user.getCustomId();
+        if (customId != null && !customId.isEmpty()) {
+            if (customId.startsWith("@")) {
+                holder.userIdText.setText(customId);
+            } else {
+                holder.userIdText.setText("@" + customId);
+            }
+        } else {
+            holder.userIdText.setText("No User ID");
+        }
 
         holder.itemView.setOnClickListener(v -> {
             new AlertDialog.Builder(context)
@@ -80,15 +87,13 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         ImageView image;
-        TextView userName, userStatusText;
-        View statusIndicator;
+        TextView userName, userIdText;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.profile_image);
             userName = itemView.findViewById(R.id.userName);
-            userStatusText = itemView.findViewById(R.id.userStatusText);
-            statusIndicator = itemView.findViewById(R.id.statusIndicator);
+            userIdText = itemView.findViewById(R.id.userIdText);
         }
     }
 }

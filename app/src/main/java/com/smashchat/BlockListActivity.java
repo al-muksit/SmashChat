@@ -98,7 +98,20 @@ public class BlockListActivity extends BaseActivity {
                                             Users user = userSnapshot.getValue(Users.class);
                                             if (user != null) {
                                                 user.setUserId(userSnapshot.getKey());
-                                                blockedUsers.add(user);
+                                                
+                                                // Check for existing to avoid duplicates during rapid updates
+                                                int existingIndex = -1;
+                                                for (int i = 0; i < blockedUsers.size(); i++) {
+                                                    if (blockedUsers.get(i).getUserId().equals(user.getUserId())) {
+                                                        existingIndex = i;
+                                                        break;
+                                                    }
+                                                }
+                                                if (existingIndex != -1) {
+                                                    blockedUsers.set(existingIndex, user);
+                                                } else {
+                                                    blockedUsers.add(user);
+                                                }
                                                 updateUI();
                                             }
                                         }
