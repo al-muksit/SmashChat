@@ -194,10 +194,9 @@ public class ChatActivity extends BaseActivity {
             }
         });
 
-        // Mark this chat as active for both users with current timestamp for sorting
-        long currentTimestamp = new Date().getTime();
-        database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(currentTimestamp);
-        database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(currentTimestamp);
+        // Mark this chat as read for the current user (sender)
+        database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
+        database.getReference().child("UserChats").child(senderId).child(receiverId).child("timestamp").setValue(new Date().getTime());
 
         // Fetch messages
         database.getReference().child("Messages").child(senderRoom)
@@ -213,6 +212,9 @@ public class ChatActivity extends BaseActivity {
                         if (messageList.size() > 0) {
                             binding.chatRecyclerView.smoothScrollToPosition(messageList.size() - 1);
                         }
+                        
+                        // Mark as read when new messages arrive while user is in chat
+                        database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
                     }
 
                     @Override
@@ -266,8 +268,13 @@ public class ChatActivity extends BaseActivity {
                     database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
                             .addOnSuccessListener(unused1 -> {
                                 // Update last interaction time for both users to trigger sorting in MainActivity
-                                database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(currentTimestamp);
-                                database.getReference().child("UserChats").child(receiverId).child(senderId).setValue(currentTimestamp);
+                                // Sender's side is read by sender
+                                database.getReference().child("UserChats").child(senderId).child(receiverId).child("timestamp").setValue(currentTimestamp);
+                                database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
+                                
+                                // Receiver's side is NOT read by receiver
+                                database.getReference().child("UserChats").child(receiverId).child(senderId).child("timestamp").setValue(currentTimestamp);
+                                database.getReference().child("UserChats").child(receiverId).child(senderId).child("read").setValue(false);
                             });
                 });
     }
@@ -319,13 +326,24 @@ public class ChatActivity extends BaseActivity {
     private void showBlockConfirmation() {
         new AlertDialog.Builder(this)
                 .setTitle("Block User")
-                .setMessage("Are you sure you want to block this user?")
-                .setPositiveButton("Block", (dialog, which) -> {
+                .setMessage("Are you sure you want to block this user? This will also delete your chat history.")
+                .setPositiveButton("Confirm", (dialog, which) -> {
+                    // 1. Add to BlockedUsers list (A blocked B) and BlockedBy list (B is blocked by A)
                     database.getReference().child("BlockedUsers").child(senderId).child(receiverId).setValue(true);
-                    Toast.makeText(ChatActivity.this, "User blocked", Toast.LENGTH_SHORT).show();
+                    database.getReference().child("BlockedBy").child(receiverId).child(senderId).setValue(true);
+                    
+                    // 2. Delete chat history for both
+                    database.getReference().child("Messages").child(senderRoom).removeValue();
+                    database.getReference().child("Messages").child(receiverIdRoom).removeValue();
+                    
+                    // 3. Remove from active chats (UserChats)
+                    database.getReference().child("UserChats").child(senderId).child(receiverId).removeValue();
+                    database.getReference().child("UserChats").child(receiverId).child(senderId).removeValue();
+
+                    Toast.makeText(ChatActivity.this, "User blocked and chat deleted", Toast.LENGTH_SHORT).show();
                     finish();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 

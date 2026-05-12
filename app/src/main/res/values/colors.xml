@@ -5,4 +5,5 @@
     <color name="grey">#636059</color>
     <color name="appDefaultColor">#007C6F</color>
     <color name="backgroundColor">#CAD1CA</color>
+    <color name="highlight_color">#009688</color>
 </resources>
