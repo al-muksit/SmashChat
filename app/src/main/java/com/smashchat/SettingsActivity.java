@@ -43,6 +43,10 @@ public class SettingsActivity extends BaseActivity {
         binding.btnDarkMode.setOnClickListener(v -> 
             startActivity(new Intent(SettingsActivity.this, DarkModeActivity.class))
         );
+
+        binding.btnBlockList.setOnClickListener(v -> 
+            startActivity(new Intent(SettingsActivity.this, BlockListActivity.class))
+        );
     }
 
     @Override

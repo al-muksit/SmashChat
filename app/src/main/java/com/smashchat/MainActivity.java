@@ -39,6 +39,8 @@ public class MainActivity extends BaseActivity {
     private ActivityMainBinding binding;
     private ArrayList<Users> userList = new ArrayList<>(); // Active chats
     private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
+    private ArrayList<String> blockedUsersList = new ArrayList<>(); // People I blocked
+    private ArrayList<String> blockedByList = new ArrayList<>(); // People who blocked me
     private UsersAdapter usersAdapter;
     private Handler searchHandler = new Handler();
     private Runnable searchRunnable;
@@ -107,7 +109,43 @@ public class MainActivity extends BaseActivity {
         });
 
         // Fetch users from Firebase Realtime Database
+        fetchBlockedLists();
         fetchUsers();
+    }
+
+    private void fetchBlockedLists() {
+        String currentUid = FirebaseAuth.getInstance().getUid();
+        if (currentUid == null) return;
+
+        // Listen for people I blocked
+        firebaseDatabase.getReference().child("BlockedUsers").child(currentUid)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        blockedUsersList.clear();
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            blockedUsersList.add(ds.getKey());
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+
+        // Listen for people who blocked me
+        firebaseDatabase.getReference().child("BlockedBy").child(currentUid)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        blockedByList.clear();
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            blockedByList.add(ds.getKey());
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
     }
 
     private void searchUsers(String query) {
@@ -148,11 +186,24 @@ public class MainActivity extends BaseActivity {
                                         continue;
                                     }
 
+                                    // Filter out blocked users
+                                    if (blockedUsersList.contains(userId) || blockedByList.contains(userId)) {
+                                        continue;
+                                    }
+
                                     String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
                                     String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
                                     
                                     // Search by name or custom ID as requested
                                     if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery)) {
+                                        // Check if this user is in our active chats to get read status
+                                        for (Users activeUser : userList) {
+                                            if (activeUser.getUserId().equals(userId)) {
+                                                user.setRead(activeUser.isRead());
+                                                user.setLastMessageTime(activeUser.getLastMessageTime());
+                                                break;
+                                            }
+                                        }
                                         results.add(user);
                                     }
                                 }
@@ -211,10 +262,22 @@ public class MainActivity extends BaseActivity {
                                             if (user != null) {
                                                 user.setUserId(userSnapshot.getKey());
                                                 
-                                                // Get the last interaction timestamp from UserChats for sorting
-                                                Object timestampObj = chatSnapshot.getValue();
-                                                if (timestampObj instanceof Long) {
-                                                    user.setLastMessageTime((Long) timestampObj);
+                                                // Filter out blocked users even from active chats
+                                                if (blockedUsersList.contains(user.getUserId()) || blockedByList.contains(user.getUserId())) {
+                                                    return;
+                                                }
+                                                
+                                                // Get the last interaction timestamp and read status from UserChats
+                                                Long timestamp = chatSnapshot.child("timestamp").getValue(Long.class);
+                                                Boolean isRead = chatSnapshot.child("read").getValue(Boolean.class);
+                                                
+                                                if (timestamp != null) {
+                                                    user.setLastMessageTime(timestamp);
+                                                }
+                                                if (isRead != null) {
+                                                    user.setRead(isRead);
+                                                } else {
+                                                    user.setRead(true); // Default to read if not specified
                                                 }
                                                 
                                                 // Update or add user in userList

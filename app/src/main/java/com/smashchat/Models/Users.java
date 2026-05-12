@@ -15,6 +15,7 @@ public class Users {
     private String customId;
     private String status;
     private long lastMessageTime;
+    private boolean read = true;
 
     /**
      * Full constructor for a user.
@@ -50,6 +51,24 @@ public class Users {
     }
 
     /**
+     * Full constructor for a user including lastMessageTime and read status.
+     */
+    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime, boolean read) {
+        this.profilePic = profilePic;
+        this.userName = userName;
+        this.email = email;
+        this.password = password;
+        this.userId = userId;
+        this.lastMessage = lastMessage;
+        this.phone = phone;
+        this.address = address;
+        this.customId = customId;
+        this.status = status;
+        this.lastMessageTime = lastMessageTime;
+        this.read = read;
+    }
+
+    /**
      * Default constructor required for calls to DataSnapshot.getValue(Users.class)
      */
     public Users() {
@@ -64,9 +83,18 @@ public class Users {
         this.password = password;
         this.status = "Offline";
         this.lastMessageTime = 0;
+        this.read = true;
     }
 
     // Getters and Setters
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
+    }
 
     public long getLastMessageTime() {
         return lastMessageTime;
