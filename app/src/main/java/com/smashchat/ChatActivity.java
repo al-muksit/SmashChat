@@ -195,8 +195,28 @@ public class ChatActivity extends BaseActivity {
         });
 
         // Mark this chat as read for the current user (sender)
-        database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
-        database.getReference().child("UserChats").child(senderId).child(receiverId).child("timestamp").setValue(new Date().getTime());
+        database.getReference().child("UserChats").child(senderId).child(receiverId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            Object val = snapshot.getValue();
+                            if (val instanceof Long) {
+                                // Convert old format to new format while preserving timestamp
+                                java.util.HashMap<String, Object> map = new java.util.HashMap<>();
+                                map.put("timestamp", val);
+                                map.put("read", true);
+                                database.getReference().child("UserChats").child(senderId).child(receiverId).setValue(map);
+                            } else {
+                                // Update read status in existing map format
+                                database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
 
         // Fetch messages
         database.getReference().child("Messages").child(senderRoom)

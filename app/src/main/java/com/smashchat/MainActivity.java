@@ -268,16 +268,22 @@ public class MainActivity extends BaseActivity {
                                                 }
                                                 
                                                 // Get the last interaction timestamp and read status from UserChats
-                                                Long timestamp = chatSnapshot.child("timestamp").getValue(Long.class);
-                                                Boolean isRead = chatSnapshot.child("read").getValue(Boolean.class);
-                                                
-                                                if (timestamp != null) {
-                                                    user.setLastMessageTime(timestamp);
-                                                }
-                                                if (isRead != null) {
-                                                    user.setRead(isRead);
+                                                Object val = chatSnapshot.getValue();
+                                                if (val instanceof Long) {
+                                                    user.setLastMessageTime((Long) val);
+                                                    user.setRead(true);
                                                 } else {
-                                                    user.setRead(true); // Default to read if not specified
+                                                    Long timestamp = chatSnapshot.child("timestamp").getValue(Long.class);
+                                                    Boolean isRead = chatSnapshot.child("read").getValue(Boolean.class);
+                                                    
+                                                    if (timestamp != null) {
+                                                        user.setLastMessageTime(timestamp);
+                                                    }
+                                                    if (isRead != null) {
+                                                        user.setRead(isRead);
+                                                    } else {
+                                                        user.setRead(true); // Default to read if not specified
+                                                    }
                                                 }
                                                 
                                                 // Update or add user in userList
