@@ -22,6 +22,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.smashchat.AccountDetails.OtherUserProfileActivity;
 import com.smashchat.Adapter.ChatAdapter;
 import com.smashchat.Models.Messages;
 import com.smashchat.Models.Users;

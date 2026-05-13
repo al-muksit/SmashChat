@@ -17,7 +17,7 @@
         android:theme="@style/Theme.SmashChat"
         tools:targetApi="31">
         <activity
-            android:name=".BlockListActivity"
+            android:name=".AccountDetails.BlockListActivity"
             android:exported="false" />
         <activity
             android:name=".ActiveStatusActivity"
@@ -34,11 +34,11 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize|stateAlwaysHidden" />
         <activity
-            android:name=".OtherUserProfileActivity"
+            android:name=".AccountDetails.OtherUserProfileActivity"
             android:label="User Profile"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".ProfileActivity"
+            android:name=".AccountDetails.ProfileActivity"
             android:label="Profile"
             android:parentActivityName=".MainActivity" />
         <activity android:name=".AccountDetails.SignupActivity" />
