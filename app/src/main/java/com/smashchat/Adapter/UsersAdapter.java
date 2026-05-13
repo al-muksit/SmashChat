@@ -80,9 +80,22 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
                 if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)) {
                     holder.userName.setTextColor(typedValue.data);
                 }
-                // Reset Status to Secondary
-                if (context.getTheme().resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)) {
-                    holder.userStatus.setTextColor(typedValue.data);
+                
+                // Set specific color for Active and Offline based on Theme
+                boolean isDarkMode = (context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+                
+                if ("Active".equals(status)) {
+                    if (isDarkMode) {
+                        holder.userStatus.setTextColor(android.graphics.Color.parseColor("#81C784")); // Light Green for Dark Mode
+                    } else {
+                        holder.userStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32")); // Dark Green for Light Mode
+                    }
+                } else {
+                    if (isDarkMode) {
+                        holder.userStatus.setTextColor(android.graphics.Color.parseColor("#BDBDBD")); // Light Grey for Dark Mode
+                    } else {
+                        holder.userStatus.setTextColor(android.graphics.Color.parseColor("#757575")); // Dark Grey for Light Mode
+                    }
                 }
             }
             
