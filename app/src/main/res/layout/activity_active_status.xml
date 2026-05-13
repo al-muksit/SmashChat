@@ -36,9 +36,7 @@
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/statusSwitch"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:thumbTint="#009688"
-            app:trackTint="#80009688" />
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 

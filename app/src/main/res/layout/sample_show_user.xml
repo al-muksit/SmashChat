@@ -50,6 +50,8 @@
             android:text="@string/user_name"
             android:textColor="?attr/colorOnSurface"
             android:textSize="18sp"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textStyle="bold" />
 
         <TextView
@@ -58,6 +60,8 @@
             android:layout_height="wrap_content"
             android:textColor="?android:attr/textColorSecondary"
             android:text="Offline"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textSize="13sp" />
     </LinearLayout>
 
