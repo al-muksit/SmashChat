@@ -48,8 +48,15 @@ public class ActiveStatusActivity extends BaseActivity {
     private void updateStatusInFirebase(boolean isEnabled) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
-            String status = isEnabled ? "Active" : "Offline";
-            FirebaseDatabase.getInstance().getReference().child("UserProfiles").child(uid).child("status").setValue(status);
+            com.google.firebase.database.DatabaseReference statusRef = 
+                    FirebaseDatabase.getInstance().getReference().child("UserProfiles").child(uid).child("status");
+            
+            if (isEnabled) {
+                statusRef.setValue("Active");
+                statusRef.onDisconnect().setValue("Offline");
+            } else {
+                statusRef.setValue("Offline");
+            }
         }
     }
 

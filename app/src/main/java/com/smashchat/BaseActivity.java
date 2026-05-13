@@ -1,9 +1,14 @@
 package com.smashchat;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.smashchat.Utils.PreferenceManager;
 
@@ -14,6 +19,8 @@ import com.smashchat.Utils.PreferenceManager;
 public class BaseActivity extends AppCompatActivity {
 
     protected PreferenceManager preferenceManager;
+    private static final Handler statusHandler = new Handler(Looper.getMainLooper());
+    private static Runnable offlineRunnable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -24,14 +31,22 @@ public class BaseActivity extends AppCompatActivity {
     private void updateStatus(String status) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
-            // Only update to "Active" if the user has enabled Active Status in settings.
-            // Always allow updating to "Offline" to ensure accuracy when leaving.
-            if (preferenceManager.isActiveStatusEnabled() || status.equals("Offline")) {
-                FirebaseDatabase.getInstance().getReference()
-                        .child("UserProfiles")
-                        .child(uid)
-                        .child("status")
-                        .setValue(status);
+            DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference()
+                    .child("UserProfiles")
+                    .child(uid)
+                    .child("status");
+
+            if ("Active".equals(status)) {
+                if (preferenceManager.isActiveStatusEnabled()) {
+                    statusRef.setValue("Active");
+                    statusRef.onDisconnect().setValue("Offline");
+                } else {
+                    // If status is disabled, force it to show as Offline
+                    statusRef.setValue("Offline");
+                }
+            } else {
+                // Always allow updating to "Offline" to ensure accuracy when leaving.
+                statusRef.setValue("Offline");
             }
         }
     }
@@ -39,12 +54,20 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Cancel any pending offline update since the user is still in the app
+        if (offlineRunnable != null) {
+            statusHandler.removeCallbacks(offlineRunnable);
+            offlineRunnable = null;
+        }
         updateStatus("Active");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        updateStatus("Offline");
+        // Schedule an offline update with a slight delay (2 seconds)
+        // This prevents the user from appearing "Offline" during activity transitions
+        offlineRunnable = () -> updateStatus("Offline");
+        statusHandler.postDelayed(offlineRunnable, 2000);
     }
 }

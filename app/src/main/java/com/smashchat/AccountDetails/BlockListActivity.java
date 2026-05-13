@@ -1,4 +1,4 @@
-package com.smashchat;
+package com.smashchat.AccountDetails;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +18,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Adapter.BlockedUsersAdapter;
+import com.smashchat.BaseActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.databinding.ActivityBlockListBinding;
 

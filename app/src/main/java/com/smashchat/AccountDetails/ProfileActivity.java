@@ -1,4 +1,4 @@
-package com.smashchat;
+package com.smashchat.AccountDetails;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -10,7 +10,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -22,10 +21,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.smashchat.AccountDetails.SigninActivity;
+import com.smashchat.BaseActivity;
 import com.smashchat.Models.Users;
+import com.smashchat.R;
 import com.smashchat.Utils.DatabaseHelper;
-import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityProfileBinding;
 import com.squareup.picasso.Picasso;
 
