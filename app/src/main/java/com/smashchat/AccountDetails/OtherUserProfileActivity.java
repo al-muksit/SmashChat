@@ -10,9 +10,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.smashchat.BaseActivity;
 import com.smashchat.ChatActivity;
-import com.smashchat.R;
 import com.smashchat.databinding.ActivityOtherUserProfileBinding;
 import com.squareup.picasso.Picasso;
+import com.smashchat.R;
 
 /**
  * OtherUserProfileActivity displays the profile details of another user.
@@ -45,11 +45,16 @@ public class OtherUserProfileActivity extends BaseActivity {
 
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(name);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        // Display data
+        // Set dynamic user name in the toolbar TextView
+        binding.toolbarUserName.setText(name != null ? name : "User Profile");
+        
+        // Handle back button click
+        binding.backArrow.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+        // Display body data
         binding.tvUserName.setText(name);
         binding.tvEmail.setText(email);
         binding.tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "No phone number");

@@ -38,61 +38,56 @@ public class ActiveStatusActivity extends BaseActivity {
         }
 
         binding.statusSwitch.setChecked(preferenceManager.isActiveStatusEnabled());
-        setupSwitchColors();
+        
+        // Apply initial colors
+        applySwitchColorTheme(binding.statusSwitch.isChecked());
 
         binding.statusSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setActiveStatusEnabled(isChecked);
             updateStatusInFirebase(isChecked);
+            // Force color update on every click
+            applySwitchColorTheme(isChecked);
         });
     }
 
-    private void setupSwitchColors() {
+    private void applySwitchColorTheme(boolean isChecked) {
         boolean isDarkMode = (getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
 
-        // --- DEFINING COLORS ---
+        // --- DEFINE MEANINGFUL COLOR VARIABLES ---
         
-        // Active Colors (When Switch is ON)
-        int activeTealThumb = android.graphics.Color.parseColor("#009688");
-        int activeTealTrack = android.graphics.Color.parseColor("#80009688"); // Semi-transparent teal
+        // ON State Colors (Teal)
+        int colorTealThumbOn = android.graphics.Color.parseColor("#009688");
+        int colorTealTrackOn = android.graphics.Color.parseColor("#80009688");
 
-        // Inactive Colors (When Switch is OFF)
-        int lightGrey = android.graphics.Color.parseColor("#BDBDBD");
-        int darkGrey = android.graphics.Color.parseColor("#757575");
+        // OFF State Colors (Grey)
+        int colorLightGrey = android.graphics.Color.parseColor("#BDBDBD");
+        int colorDarkGrey = android.graphics.Color.parseColor("#757575");
         
-        int lightGreyTrack = android.graphics.Color.parseColor("#80BDBDBD");
-        int darkGreyTrack = android.graphics.Color.parseColor("#80757575");
+        int colorLightGreyTrack = android.graphics.Color.parseColor("#80BDBDBD");
+        int colorDarkGreyTrack = android.graphics.Color.parseColor("#80757575");
 
-        // Select the appropriate grey based on whether Dark Mode is active
-        int inactiveGreyThumb = isDarkMode ? lightGrey : darkGrey;
-        int inactiveGreyTrack = isDarkMode ? lightGreyTrack : darkGreyTrack;
-
-        // --- CREATING STATE LISTS ---
-
-        // These lists tell the Android system: 
-        // "Use color A if checked, otherwise use color B"
+        // --- SELECT COLORS BASED ON STATE ---
         
-        int[][] states = new int[][] {
-                new int[] { android.R.attr.state_checked }, // State 1: Checked (ON)
-                new int[] { }                               // State 2: Default (OFF)
-        };
+        int finalThumbColor;
+        int finalTrackColor;
 
-        android.content.res.ColorStateList thumbColorStateList = new android.content.res.ColorStateList(
-                states,
-                new int[] { activeTealThumb, inactiveGreyThumb }
-        );
+        if (isChecked) {
+            finalThumbColor = colorTealThumbOn;
+            finalTrackColor = colorTealTrackOn;
+        } else {
+            // Select grey shade based on Dark Mode
+            finalThumbColor = isDarkMode ? colorLightGrey : colorDarkGrey;
+            finalTrackColor = isDarkMode ? colorLightGreyTrack : colorDarkGreyTrack;
+        }
 
-        android.content.res.ColorStateList trackColorStateList = new android.content.res.ColorStateList(
-                states,
-                new int[] { activeTealTrack, inactiveGreyTrack }
-        );
-
-        // --- APPLYING TINTS ---
+        // --- APPLY COLORS ---
         
-        // Thumb: The circular part that moves
-        binding.statusSwitch.setThumbTintList(thumbColorStateList);
-        
-        // Track: The background bar the thumb slides on
-        binding.statusSwitch.setTrackTintList(trackColorStateList);
+        // We set the PorterDuff mode to SRC_IN to ensure the color overrides any drawable defaults
+        binding.statusSwitch.setThumbTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+        binding.statusSwitch.setTrackTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+        binding.statusSwitch.setThumbTintList(android.content.res.ColorStateList.valueOf(finalThumbColor));
+        binding.statusSwitch.setTrackTintList(android.content.res.ColorStateList.valueOf(finalTrackColor));
     }
 
     private void updateStatusInFirebase(boolean isEnabled) {

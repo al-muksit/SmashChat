@@ -361,6 +361,23 @@ public class MainActivity extends BaseActivity {
         } else if (id == R.id.settings) {
             startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             return true;
+        } else if (id == R.id.share) {
+            firebaseDatabase.getReference("AppLink").child("SmashChat")
+                    .get().addOnSuccessListener(dataSnapshot -> {
+                        String appLink = dataSnapshot.getValue(String.class);
+                        if (appLink != null) {
+                            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                            shareIntent.setType("text/plain");
+                            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Check out SmashChat!");
+                            shareIntent.putExtra(Intent.EXTRA_TEXT, "I'm loving SmashChat app! Download it from here: " + appLink);
+                            startActivity(Intent.createChooser(shareIntent, "Share via"));
+                        } else {
+                            Toast.makeText(this, "App link not found in database.", Toast.LENGTH_SHORT).show();
+                        }
+                    }).addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to retrieve app link: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+            return true;
         }
         
         return super.onOptionsItemSelected(item);
