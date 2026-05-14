@@ -11,16 +11,19 @@
     <item
         android:id="@+id/mute_menu"
         android:title="Mute"
+        android:icon="@drawable/baseline_volume_off_24"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/delete_chat_menu"
         android:title="Delete Chat"
+        android:icon="@drawable/baseline_delete_24"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/block_menu"
         android:title="Block"
+        android:icon="@drawable/baseline_block_24"
         app:showAsAction="never" />
 
 </menu>
