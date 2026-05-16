@@ -63,27 +63,24 @@ public class ChatActivity extends BaseActivity {
             // 1. Maintain top/side padding for the system bars (status bar, etc.)
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             
-            // 2. Calculate Base Height (80sp) in pixels
-            float baseHeightSp = 80f;
-            int baseHeightPx = (int) android.util.TypedValue.applyDimension(
-                    android.util.TypedValue.COMPLEX_UNIT_SP, baseHeightSp, getResources().getDisplayMetrics());
+            // 2. Use IME bottom inset (keyboard or navigation bar)
+            int bottomInset = ime.bottom;
             
-            // 3. Calculate Keyboard Height (accounting for the navigation bar)
-            int keyboardHeight = ime.bottom - systemBars.bottom;
-            if (keyboardHeight < 0) keyboardHeight = 0;
-            
-            // 4. Add extra offset (15sp) when keyboard is visible
-            int extraOffsetPx = 0;
-            if (keyboardHeight > 0) {
+            // 3. Add extra offset (15sp) when keyboard is visible for better UX
+            if (insets.isVisible(WindowInsetsCompat.Type.ime())) {
                 float extraOffsetSp = 15f;
-                extraOffsetPx = (int) android.util.TypedValue.applyDimension(
+                int extraOffsetPx = (int) android.util.TypedValue.applyDimension(
                         android.util.TypedValue.COMPLEX_UNIT_SP, extraOffsetSp, getResources().getDisplayMetrics());
+                bottomInset += extraOffsetPx;
             }
             
-            // 5. Apply formula: New Height = 80sp + Keyboard Height + Extra Offset
-            android.view.ViewGroup.LayoutParams params = binding.linearLayout.getLayoutParams();
-            params.height = baseHeightPx + keyboardHeight + extraOffsetPx;
-            binding.linearLayout.setLayoutParams(params);
+            // 4. Apply padding to the input layout to move it above keyboard/nav bar
+            binding.linearLayout.setPadding(
+                    binding.linearLayout.getPaddingLeft(),
+                    binding.linearLayout.getPaddingTop(),
+                    binding.linearLayout.getPaddingRight(),
+                    bottomInset
+            );
 
             return insets;
         });
