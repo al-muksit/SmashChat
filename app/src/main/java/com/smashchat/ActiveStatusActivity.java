@@ -30,11 +30,10 @@ public class ActiveStatusActivity extends BaseActivity {
             return insets;
         });
 
-        // Toolbar Setup
-        setSupportActionBar(binding.toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Active Status");
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // Custom Toolbar Setup
+        android.widget.ImageView ivBack = binding.toolbar.findViewById(R.id.backArrow);
+        if (ivBack != null) {
+            ivBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         }
 
         binding.statusSwitch.setChecked(preferenceManager.isActiveStatusEnabled());
