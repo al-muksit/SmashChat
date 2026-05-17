@@ -69,6 +69,12 @@ public class ProfileActivity extends BaseActivity {
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Profile Update");
         progressDialog.setMessage("Updating your information...");
+
+        // Custom Toolbar Setup
+        android.widget.ImageView ivBack = binding.toolbar.findViewById(R.id.backArrow);
+        if (ivBack != null) {
+            ivBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+        }
         
         loadUserData();
 

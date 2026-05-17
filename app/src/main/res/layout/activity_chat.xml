@@ -42,7 +42,7 @@
         <EditText
             android:id="@+id/etMessage"
             android:layout_width="0dp"
-            android:layout_height="60sp"
+            android:layout_height="50sp"
             android:layout_weight="1"
             android:background="@drawable/design_edittext"
             android:hint="Type a message..."
@@ -52,8 +52,8 @@
 
         <ImageView
             android:id="@+id/btnSend"
-            android:layout_width="60sp"
-            android:layout_height="60sp"
+            android:layout_width="50sp"
+            android:layout_height="50sp"
             android:layout_marginStart="2sp"
             android:padding="2sp"
             android:src="@android:drawable/ic_menu_send"

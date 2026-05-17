@@ -1,7 +1,6 @@
 package com.smashchat;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
@@ -78,9 +77,8 @@ public class MainActivity extends BaseActivity {
         // Setup Toolbar
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("SmashChat");
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-        binding.toolbar.setTitleTextColor(Color.WHITE);
 
         // Setup RecyclerView
         usersAdapter = new UsersAdapter(displayedList, this);
