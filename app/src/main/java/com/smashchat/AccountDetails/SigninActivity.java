@@ -40,7 +40,13 @@ public class SigninActivity extends AppCompatActivity {
         // Handling Window Insets for Edge-to-Edge display
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            
+            // Apply top and side padding from system bars
+            // We use the maximum of systemBars.bottom and ime.bottom to ensure 
+            // the layout moves up for both the navigation bar and the keyboard.
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
+
             return insets;
         });
 
