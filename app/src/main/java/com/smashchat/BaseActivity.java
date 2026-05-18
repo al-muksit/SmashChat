@@ -6,6 +6,7 @@ import android.os.Looper;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -24,8 +25,22 @@ public class BaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         preferenceManager = new PreferenceManager(this);
+
+        // Apply theme globally before super.onCreate and setContentView
+        int currentTheme = preferenceManager.getDarkModeTheme();
+        switch (currentTheme) {
+            case PreferenceManager.THEME_OFF:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case PreferenceManager.THEME_ON:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case PreferenceManager.THEME_SYSTEM:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
+        }
+        super.onCreate(savedInstanceState);
     }
 
     private void updateStatus(String status) {

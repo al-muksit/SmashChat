@@ -88,7 +88,7 @@
                 android:background="@drawable/edit_text_background"
                 android:hint="Name"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/black"
                 android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
@@ -99,7 +99,7 @@
                 android:background="@drawable/edit_text_background"
                 android:hint="Unique User ID (e.g. @username)"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/black"
                 android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
@@ -111,7 +111,7 @@
                 android:enabled="false"
                 android:hint="Email"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/black"
                 android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
@@ -123,7 +123,7 @@
                 android:hint="Phone Number"
                 android:inputType="phone"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/black"
                 android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
@@ -136,7 +136,7 @@
                 android:hint="Address"
                 android:minHeight="80dp"
                 android:padding="15dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/black"
                 android:textColorHint="?android:attr/textColorHint" />
 
             <com.google.android.material.button.MaterialButton

@@ -7,12 +7,12 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.smashchat.BaseActivity;
 import com.smashchat.MainActivity;
 import com.smashchat.databinding.ActivitySigninBinding;
 
@@ -22,7 +22,7 @@ import java.util.Objects;
  * SigninActivity handles the user login process.
  * It checks if a user is already logged in and redirects to MainActivity.
  */
-public class SigninActivity extends AppCompatActivity {
+public class SigninActivity extends BaseActivity {
 
     private FirebaseAuth firebaseAuth;
     private ActivitySigninBinding binding;
