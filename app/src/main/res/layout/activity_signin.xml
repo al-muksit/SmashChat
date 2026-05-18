@@ -47,8 +47,8 @@
                 android:hint="Enter email"
                 android:inputType="textEmailAddress"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <EditText
                 android:id="@+id/password"
@@ -59,8 +59,8 @@
                 android:hint="Enter password"
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <Button
                 android:id="@+id/signin"

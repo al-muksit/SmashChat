@@ -66,9 +66,9 @@ public class ChatActivity extends BaseActivity {
             // 2. Use IME bottom inset (keyboard or navigation bar)
             int bottomInset = ime.bottom;
             
-            // 3. Add extra offset (15sp) when keyboard is visible for better UX
+            // 3. Add extra offset (20sp) when keyboard is visible for better UX
             if (insets.isVisible(WindowInsetsCompat.Type.ime())) {
-                float extraOffsetSp = 15f;
+                float extraOffsetSp = 20f;
                 int extraOffsetPx = (int) android.util.TypedValue.applyDimension(
                         android.util.TypedValue.COMPLEX_UNIT_SP, extraOffsetSp, getResources().getDisplayMetrics());
                 bottomInset += extraOffsetPx;
@@ -221,6 +221,11 @@ public class ChatActivity extends BaseActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!snapshot.exists()) {
+                            messageList.clear();
+                            chatAdapter.notifyDataSetChanged();
+                            return;
+                        }
                         messageList.clear();
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             Messages model = ds.getValue(Messages.class);
@@ -332,8 +337,11 @@ public class ChatActivity extends BaseActivity {
                 .setTitle("Delete Chat")
                 .setMessage("Are you sure you want to delete this chat permanently?")
                 .setPositiveButton("Confirm", (dialog, which) -> {
-                    database.getReference().child("Messages").child(senderRoom).removeValue();
+                    // Remove message history for this user
+                    database.getReference().child("Messages").child(senderId + receiverId).removeValue();
+                    // Remove from active chats list for this user
                     database.getReference().child("UserChats").child(senderId).child(receiverId).removeValue();
+
                     Toast.makeText(ChatActivity.this, "Chat deleted", Toast.LENGTH_SHORT).show();
                     finish();
                 })

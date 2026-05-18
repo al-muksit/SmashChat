@@ -46,8 +46,8 @@
                 android:background="@drawable/design_edittext"
                 android:hint="Enter name"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <EditText
                 android:id="@+id/userId"
@@ -57,8 +57,8 @@
                 android:background="@drawable/design_edittext"
                 android:hint="Enter Unique ID (e.g. user123)"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <EditText
                 android:id="@+id/email"
@@ -69,8 +69,8 @@
                 android:hint="Enter email"
                 android:inputType="textEmailAddress"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <EditText
                 android:id="@+id/password"
@@ -81,8 +81,8 @@
                 android:hint="Enter password"
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/grey" />
 
             <Button
                 android:id="@+id/signup"

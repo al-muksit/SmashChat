@@ -10,7 +10,6 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -37,6 +36,7 @@ public class MainActivity extends BaseActivity {
     private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
     private ArrayList<String> blockedUsersList = new ArrayList<>(); // People I blocked
     private ArrayList<String> blockedByList = new ArrayList<>(); // People who blocked me
+    private final java.util.HashMap<String, ValueEventListener> profileListeners = new java.util.HashMap<>();
     private UsersAdapter usersAdapter;
     private Handler searchHandler = new Handler();
     private Runnable searchRunnable;
@@ -45,20 +45,6 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Apply theme before setContentView
-        int currentTheme = preferenceManager.getDarkModeTheme();
-        switch (currentTheme) {
-            case PreferenceManager.THEME_OFF:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                break;
-            case PreferenceManager.THEME_ON:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                break;
-            case PreferenceManager.THEME_SYSTEM:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-                break;
-        }
-
         // Initializing View Binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
@@ -235,87 +221,76 @@ public class MainActivity extends BaseActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        userList.clear();
+                        java.util.HashSet<String> currentChatIds = new java.util.HashSet<>();
+                        
                         if (!snapshot.exists()) {
-                            if (binding.searchView.getQuery().toString().isEmpty()) {
-                                displayedList.clear();
-                                usersAdapter.notifyDataSetChanged();
-                                updateEmptyState();
-                            }
+                            // No active chats, clear everything
+                            clearStaleListeners(currentChatIds);
+                            userList.clear();
+                            updateDisplayList();
                             return;
                         }
 
                         for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
                             String otherUserId = chatSnapshot.getKey();
+                            if (otherUserId == null) continue;
                             
-                            // Listen for real-time profile/status updates for each active chat
-                            firebaseDatabase.getReference().child("UserProfiles").child(otherUserId)
-                                    .addValueEventListener(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot userSnapshot) {
-                                            Users user = userSnapshot.getValue(Users.class);
-                                            if (user != null) {
-                                                user.setUserId(userSnapshot.getKey());
-                                                
-                                                // Filter out blocked users even from active chats
-                                                if (blockedUsersList.contains(user.getUserId()) || blockedByList.contains(user.getUserId())) {
-                                                    return;
-                                                }
-                                                
-                                                // Get the last interaction timestamp and read status from UserChats
-                                                Object val = chatSnapshot.getValue();
-                                                if (val instanceof Long) {
-                                                    user.setLastMessageTime((Long) val);
-                                                    user.setRead(true);
-                                                } else {
-                                                    Long timestamp = chatSnapshot.child("timestamp").getValue(Long.class);
-                                                    Boolean isRead = chatSnapshot.child("read").getValue(Boolean.class);
-                                                    
-                                                    if (timestamp != null) {
-                                                        user.setLastMessageTime(timestamp);
-                                                    }
-                                                    if (isRead != null) {
-                                                        user.setRead(isRead);
-                                                    } else {
-                                                        user.setRead(true); // Default to read if not specified
-                                                    }
-                                                }
-                                                
-                                                // Update or add user in userList
-                                                int index = -1;
-                                                for (int i = 0; i < userList.size(); i++) {
-                                                    if (userList.get(i).getUserId().equals(user.getUserId())) {
-                                                        index = i;
-                                                        break;
-                                                    }
-                                                }
-                                                
-                                                if (index != -1) {
-                                                    userList.set(index, user);
-                                                } else {
-                                                    userList.add(user);
-                                                }
-
-                                                // Sort the list by last interaction time (descending)
-                                                java.util.Collections.sort(userList, (u1, u2) -> 
-                                                        Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
-
-                                                // If not searching, update displayed list
-                                                runOnUiThread(() -> {
-                                                    if (binding.searchView.getQuery().toString().isEmpty()) {
-                                                        displayedList.clear();
-                                                        displayedList.addAll(userList);
-                                                        usersAdapter.notifyDataSetChanged();
-                                                        updateEmptyState();
-                                                    }
-                                                });
+                            currentChatIds.add(otherUserId);
+                            
+                            // Only add a listener if we don't already have one for this user
+                            if (!profileListeners.containsKey(otherUserId)) {
+                                ValueEventListener listener = new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot userSnapshot) {
+                                        Users user = userSnapshot.getValue(Users.class);
+                                        if (user != null) {
+                                            user.setUserId(userSnapshot.getKey());
+                                            
+                                            // Filter out blocked users
+                                            if (blockedUsersList.contains(user.getUserId()) || blockedByList.contains(user.getUserId())) {
+                                                removeFromUserList(user.getUserId());
+                                                updateDisplayList();
+                                                return;
                                             }
-                                        }
+                                            
+                                            // Get latest chat info
+                                            firebaseDatabase.getReference().child("UserChats").child(currentUid).child(otherUserId)
+                                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                                        @Override
+                                                        public void onDataChange(@NonNull DataSnapshot chatInfo) {
+                                                            if (!chatInfo.exists()) return;
 
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {}
-                                    });
+                                                            Object val = chatInfo.getValue();
+                                                            if (val instanceof Long) {
+                                                                user.setLastMessageTime((Long) val);
+                                                                user.setRead(true);
+                                                            } else {
+                                                                Long timestamp = chatInfo.child("timestamp").getValue(Long.class);
+                                                                Boolean isRead = chatInfo.child("read").getValue(Boolean.class);
+                                                                if (timestamp != null) user.setLastMessageTime(timestamp);
+                                                                user.setRead(isRead != null ? isRead : true);
+                                                            }
+                                                            
+                                                            updateUserInList(user);
+                                                        }
+
+                                                        @Override
+                                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                                    });
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {}
+                                };
+                                
+                                profileListeners.put(otherUserId, listener);
+                                firebaseDatabase.getReference().child("UserProfiles").child(otherUserId).addValueEventListener(listener);
+                            }
                         }
+                        
+                        // Cleanup listeners and users for chats that were removed
+                        clearStaleListeners(currentChatIds);
                     }
 
                     @Override
@@ -324,6 +299,64 @@ public class MainActivity extends BaseActivity {
                         updateEmptyState();
                     }
                 });
+    }
+
+    private void clearStaleListeners(java.util.HashSet<String> currentChatIds) {
+        java.util.Iterator<java.util.Map.Entry<String, ValueEventListener>> it = profileListeners.entrySet().iterator();
+        while (it.hasNext()) {
+            java.util.Map.Entry<String, ValueEventListener> entry = it.next();
+            if (!currentChatIds.contains(entry.getKey())) {
+                firebaseDatabase.getReference().child("UserProfiles").child(entry.getKey()).removeEventListener(entry.getValue());
+                it.remove();
+                
+                // Also remove from userList
+                removeFromUserList(entry.getKey());
+            }
+        }
+        updateDisplayList();
+    }
+
+    private void removeFromUserList(String userId) {
+        if (userId == null) return;
+        java.util.Iterator<Users> it = userList.iterator();
+        while (it.hasNext()) {
+            Users u = it.next();
+            if (userId.equals(u.getUserId())) {
+                it.remove();
+            }
+        }
+    }
+
+    private void updateUserInList(Users user) {
+        int index = -1;
+        for (int i = 0; i < userList.size(); i++) {
+            if (userList.get(i).getUserId().equals(user.getUserId())) {
+                index = i;
+                break;
+            }
+        }
+        
+        if (index != -1) {
+            userList.set(index, user);
+        } else {
+            userList.add(user);
+        }
+
+        java.util.Collections.sort(userList, (u1, u2) -> 
+                Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
+        
+        updateDisplayList();
+    }
+
+    private void updateDisplayList() {
+        runOnUiThread(() -> {
+            if (binding.searchView.getQuery().toString().isEmpty()) {
+                displayedList.clear();
+                displayedList.addAll(userList);
+                usersAdapter.notifyDataSetChanged();
+                updateEmptyState();
+            }
+        });
     }
 
     private void updateEmptyState() {
@@ -340,6 +373,16 @@ public class MainActivity extends BaseActivity {
             binding.emptyStateText.setVisibility(android.view.View.GONE);
             binding.userRecyclerView.setVisibility(android.view.View.VISIBLE);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Remove all profile listeners to prevent memory leaks
+        for (java.util.Map.Entry<String, ValueEventListener> entry : profileListeners.entrySet()) {
+            firebaseDatabase.getReference().child("UserProfiles").child(entry.getKey()).removeEventListener(entry.getValue());
+        }
+        profileListeners.clear();
     }
 
     @Override
