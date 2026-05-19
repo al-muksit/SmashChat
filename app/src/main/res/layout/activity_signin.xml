@@ -43,24 +43,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="50dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/auth_edittext_bg"
                 android:hint="Enter email"
                 android:inputType="textEmailAddress"
                 android:paddingStart="20dp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/grey" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <EditText
                 android:id="@+id/password"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="15dp"
-                android:background="@drawable/design_edittext"
+                android:background="@drawable/auth_edittext_bg"
                 android:hint="Enter password"
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/grey" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?android:attr/textColorHint" />
 
             <Button
                 android:id="@+id/signin"

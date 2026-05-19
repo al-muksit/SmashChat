@@ -34,7 +34,7 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#3D425C"
+        android:background="?attr/colorSurfaceVariant"
         android:orientation="horizontal"
         android:padding="8sp"
         android:forceDarkAllowed="false"
@@ -49,10 +49,8 @@
             android:background="@drawable/design_edittext"
             android:hint="Type a message..."
             android:padding="12sp"
-            android:textColor="@color/black"
-            android:textColorHint="?android:attr/textColorHint"
-            android:forceDarkAllowed="false"
-            tools:targetApi="q" />
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?android:attr/textColorHint" />
 
         <ImageView
             android:id="@+id/btnSend"
@@ -61,7 +59,7 @@
             android:layout_marginStart="2sp"
             android:padding="2sp"
             android:src="@android:drawable/ic_menu_send"
-            app:tint="@color/send_button_color" />
+            app:tint="?attr/colorPrimary" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
