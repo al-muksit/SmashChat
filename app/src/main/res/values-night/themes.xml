@@ -3,10 +3,16 @@
     <style name="Base.Theme.SmashChat" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <item name="colorPrimary">#009688</item>
-        <item name="colorSurface">#1E1E1E</item>
+        <item name="colorSurface">#121212</item>
         <item name="colorOnSurface">@color/white</item>
-        <item name="colorSurfaceVariant">#E0E0E0</item>
-        <item name="android:textColorHint">#757575</item>
+        <item name="colorSurfaceVariant">#2C2C2C</item>
+        <item name="android:textColorHint">#BDBDBD</item>
+        <item name="searchViewStyle">@style/Widget.SmashChat.SearchView</item>
+    </style>
+
+    <style name="Widget.SmashChat.SearchView" parent="Widget.AppCompat.SearchView">
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorHint">?android:attr/textColorHint</item>
     </style>
 
     <style name="ShapeAppearance.SmashChat.Circle" parent="">
