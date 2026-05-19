@@ -1,6 +1,7 @@
 package com.smashchat.Adapter;
 
 import android.content.Context;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,8 +64,15 @@ public class ChatAdapter extends RecyclerView.Adapter {
         Messages messageModel = messageList.get(position);
 
         if (holder.getClass() == SenderViewHolder.class) {
-            ((SenderViewHolder) holder).senderMsg.setText(messageModel.getMessage());
-            ((SenderViewHolder) holder).senderTime.setText(formatTime(messageModel.getTimestamp()));
+            SenderViewHolder senderViewHolder = (SenderViewHolder) holder;
+            senderViewHolder.senderMsg.setText(messageModel.getMessage());
+            senderViewHolder.senderTime.setText(formatTime(messageModel.getTimestamp()));
+
+            // Force theme-based color for sender text
+            TypedValue typedValue = new TypedValue();
+            if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)) {
+                senderViewHolder.senderMsg.setTextColor(typedValue.data);
+            }
         } else {
             ((ReceiverViewHolder) holder).receiverMsg.setText(messageModel.getMessage());
             ((ReceiverViewHolder) holder).receiverTime.setText(formatTime(messageModel.getTimestamp()));

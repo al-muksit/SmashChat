@@ -34,7 +34,7 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceVariant"
+        android:background="?attr/colorSurface"
         android:orientation="horizontal"
         android:padding="8sp"
         android:forceDarkAllowed="false"
@@ -58,8 +58,7 @@
             android:layout_height="50sp"
             android:layout_marginStart="2sp"
             android:padding="2sp"
-            android:src="@android:drawable/ic_menu_send"
-            app:tint="?attr/colorPrimary" />
+            android:src="@drawable/send_btn" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
