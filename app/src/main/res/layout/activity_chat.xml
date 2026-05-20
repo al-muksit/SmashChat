@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorSurface"
         android:orientation="horizontal"
-        android:padding="8sp"
+        android:padding="12sp"
         android:forceDarkAllowed="false"
         tools:targetApi="q"
         app:layout_constraintBottom_toBottomOf="parent">
