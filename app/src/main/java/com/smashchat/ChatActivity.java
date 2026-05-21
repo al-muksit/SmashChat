@@ -3,10 +3,11 @@ package com.smashchat;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -51,7 +52,6 @@ public class ChatActivity extends BaseActivity {
     private Users receiverUser;
     private MediaPlayer mediaPlayer;
     private boolean isInitialLoad = true;
-    private int initialInputMargin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,24 +61,13 @@ public class ChatActivity extends BaseActivity {
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        // Store the initial margin from XML to respect it later
-        initialInputMargin = ((ViewGroup.MarginLayoutParams) binding.linearLayout.getLayoutParams()).bottomMargin;
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
 
-            // Apply top/side padding to root for status bar etc.
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
-
-            // Calculate bottom inset (nav bar or keyboard)
-            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
-
-            // Apply the bottom inset PLUS the initial XML margin.
-            // This ensures your XML design is respected and not "prevented" by Java.
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) binding.linearLayout.getLayoutParams();
-            lp.bottomMargin = bottomInset + initialInputMargin;
-            binding.linearLayout.setLayoutParams(lp);
+            // Apply padding to root to respect status bar (top) and navigation bar/keyboard (bottom)
+            // We use Math.max to ensure we cover either the navigation bar or the keyboard, whichever is taller
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
 
             return insets;
         });
@@ -258,58 +247,83 @@ public class ChatActivity extends BaseActivity {
                     public void onCancelled(@NonNull DatabaseError error) {}
                 });
 
+        // Dynamic Send/Smile button toggle
+        binding.btnSend.setImageResource(R.drawable.smile);
+        binding.etMessage.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().trim().isEmpty()) {
+                    binding.btnSend.setImageResource(R.drawable.smile);
+                } else {
+                    binding.btnSend.setImageResource(R.drawable.send_btn);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
         binding.btnSend.setOnClickListener(v -> {
             String message = binding.etMessage.getText().toString().trim();
-            if (message.isEmpty()) return;
-
-            // Check if blocked before sending
-            database.getReference().child("BlockedUsers").child(senderId).child(receiverId)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            if (snapshot.exists()) {
-                                Toast.makeText(ChatActivity.this, "You have blocked this user", Toast.LENGTH_SHORT).show();
-                            } else {
-                                // Check if the receiver blocked the sender
-                                database.getReference().child("BlockedUsers").child(receiverId).child(senderId)
-                                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot snapshot2) {
-                                                if (snapshot2.exists()) {
-                                                    Toast.makeText(ChatActivity.this, "You cannot send messages to this user", Toast.LENGTH_SHORT).show();
-                                                } else {
-                                                    sendMessage(message);
-                                                }
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError error) {}
-                                        });
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {}
-                    });
+            
+            if (message.isEmpty()) {
+                // Send Smile Emoji
+                checkBlockStatusAndSend("[smile]", 1);
+            } else {
+                // Send Text Message
+                checkBlockStatusAndSend(message, 0);
+            }
         });
     }
 
-    private void sendMessage(String message) {
+    private void checkBlockStatusAndSend(String message, int type) {
+        // Check if blocked before sending
+        database.getReference().child("BlockedUsers").child(senderId).child(receiverId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            Toast.makeText(ChatActivity.this, "You have blocked this user", Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Check if the receiver blocked the sender
+                            database.getReference().child("BlockedUsers").child(receiverId).child(senderId)
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot2) {
+                                            if (snapshot2.exists()) {
+                                                Toast.makeText(ChatActivity.this, "You cannot send messages to this user", Toast.LENGTH_SHORT).show();
+                                            } else {
+                                                sendMessage(message, type);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    private void sendMessage(String message, int type) {
         long currentTimestamp = new Date().getTime();
-        final Messages model = new Messages(senderId, message);
-        model.setTimestamp(currentTimestamp);
+        final Messages model = new Messages(senderId, message, currentTimestamp, type);
         binding.etMessage.setText("");
 
         database.getReference().child("Messages").child(senderRoom).push().setValue(model)
                 .addOnSuccessListener(unused -> {
                     database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
                             .addOnSuccessListener(unused1 -> {
-                                // Update last interaction time for both users to trigger sorting in MainActivity
-                                // Sender's side is read by sender
+                                // Update last interaction time for both users
                                 database.getReference().child("UserChats").child(senderId).child(receiverId).child("timestamp").setValue(currentTimestamp);
                                 database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
                                 
-                                // Receiver's side is NOT read by receiver
                                 database.getReference().child("UserChats").child(receiverId).child(senderId).child("timestamp").setValue(currentTimestamp);
                                 database.getReference().child("UserChats").child(receiverId).child(senderId).child("read").setValue(false);
                             });

@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -65,17 +66,46 @@ public class ChatAdapter extends RecyclerView.Adapter {
 
         if (holder.getClass() == SenderViewHolder.class) {
             SenderViewHolder senderViewHolder = (SenderViewHolder) holder;
-            senderViewHolder.senderMsg.setText(messageModel.getMessage());
-            senderViewHolder.senderTime.setText(formatTime(messageModel.getTimestamp()));
+            
+            if (messageModel.getType() == 1) {
+                // Smile Emoji
+                senderViewHolder.senderMsg.setText("");
+                senderViewHolder.senderMsg.setBackground(null);
+                senderViewHolder.senderMsg.setCompoundDrawablesWithIntrinsicBounds(null, null, ContextCompat.getDrawable(context, R.drawable.smile), null);
+                senderViewHolder.senderMsg.setPadding(0, 0, 0, 0);
+            } else {
+                // Text Message
+                senderViewHolder.senderMsg.setText(messageModel.getMessage());
+                senderViewHolder.senderMsg.setBackgroundResource(R.drawable.sender_bg);
+                senderViewHolder.senderMsg.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics());
+                senderViewHolder.senderMsg.setPadding(padding, padding, padding, padding);
 
-            // Force theme-based color for sender text
-            TypedValue typedValue = new TypedValue();
-            if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)) {
-                senderViewHolder.senderMsg.setTextColor(typedValue.data);
+                // Force theme-based color for sender text
+                TypedValue typedValue = new TypedValue();
+                if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)) {
+                    senderViewHolder.senderMsg.setTextColor(typedValue.data);
+                }
             }
+            senderViewHolder.senderTime.setText(formatTime(messageModel.getTimestamp()));
         } else {
-            ((ReceiverViewHolder) holder).receiverMsg.setText(messageModel.getMessage());
-            ((ReceiverViewHolder) holder).receiverTime.setText(formatTime(messageModel.getTimestamp()));
+            ReceiverViewHolder receiverViewHolder = (ReceiverViewHolder) holder;
+            
+            if (messageModel.getType() == 1) {
+                // Smile Emoji
+                receiverViewHolder.receiverMsg.setText("");
+                receiverViewHolder.receiverMsg.setBackground(null);
+                receiverViewHolder.receiverMsg.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.smile), null, null, null);
+                receiverViewHolder.receiverMsg.setPadding(0, 0, 0, 0);
+            } else {
+                // Text Message
+                receiverViewHolder.receiverMsg.setText(messageModel.getMessage());
+                receiverViewHolder.receiverMsg.setBackgroundResource(R.drawable.receiver_bg);
+                receiverViewHolder.receiverMsg.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics());
+                receiverViewHolder.receiverMsg.setPadding(padding, padding, padding, padding);
+            }
+            receiverViewHolder.receiverTime.setText(formatTime(messageModel.getTimestamp()));
         }
     }
 
