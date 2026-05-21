@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +51,7 @@ public class ChatActivity extends BaseActivity {
     private Users receiverUser;
     private MediaPlayer mediaPlayer;
     private boolean isInitialLoad = true;
+    private int initialInputMargin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,31 +61,24 @@ public class ChatActivity extends BaseActivity {
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
+        // Store the initial margin from XML to respect it later
+        initialInputMargin = ((ViewGroup.MarginLayoutParams) binding.linearLayout.getLayoutParams()).bottomMargin;
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-            
-            // 1. Maintain top/side padding for the system bars (status bar, etc.)
+
+            // Apply top/side padding to root for status bar etc.
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
-            
-            // 2. Use IME bottom inset (keyboard or navigation bar)
-            int bottomInset = ime.bottom;
-            
-            // 3. Add extra offset (20sp) when keyboard is visible for better UX
-            if (insets.isVisible(WindowInsetsCompat.Type.ime())) {
-                float extraOffsetSp = 20f;
-                int extraOffsetPx = (int) android.util.TypedValue.applyDimension(
-                        android.util.TypedValue.COMPLEX_UNIT_SP, extraOffsetSp, getResources().getDisplayMetrics());
-                bottomInset += extraOffsetPx;
-            }
-            
-            // 4. Apply padding to the input layout to move it above keyboard/nav bar
-            binding.linearLayout.setPadding(
-                    binding.linearLayout.getPaddingLeft(),
-                    binding.linearLayout.getPaddingTop(),
-                    binding.linearLayout.getPaddingRight(),
-                    bottomInset
-            );
+
+            // Calculate bottom inset (nav bar or keyboard)
+            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
+
+            // Apply the bottom inset PLUS the initial XML margin.
+            // This ensures your XML design is respected and not "prevented" by Java.
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) binding.linearLayout.getLayoutParams();
+            lp.bottomMargin = bottomInset + initialInputMargin;
+            binding.linearLayout.setLayoutParams(lp);
 
             return insets;
         });
