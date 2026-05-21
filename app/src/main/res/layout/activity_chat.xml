@@ -36,7 +36,6 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
         android:background="@android:color/transparent"
         android:forceDarkAllowed="false"
         android:orientation="horizontal"
@@ -63,7 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="8sp"
-            android:src="@drawable/send_btn" />
+            android:src="@drawable/smile" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
