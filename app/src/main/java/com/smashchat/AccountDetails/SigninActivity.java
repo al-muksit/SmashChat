@@ -2,6 +2,7 @@ package com.smashchat.AccountDetails;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -78,7 +79,12 @@ public class SigninActivity extends BaseActivity {
                         if (task.isSuccessful()) {
                             Toast.makeText(SigninActivity.this, "Logged in Successfully", Toast.LENGTH_SHORT).show();
                             // Start Notification Service
-                            startService(new Intent(SigninActivity.this, MessageNotificationService.class));
+                            Intent serviceIntent = new Intent(SigninActivity.this, MessageNotificationService.class);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(serviceIntent);
+                            } else {
+                                startService(serviceIntent);
+                            }
                             // Navigate to MainActivity
                             Intent intent = new Intent(SigninActivity.this, MainActivity.class);
                             startActivity(intent);
@@ -101,7 +107,12 @@ public class SigninActivity extends BaseActivity {
         // Check if user is already logged in
         if (firebaseAuth.getCurrentUser() != null) {
             // Start Notification Service
-            startService(new Intent(SigninActivity.this, MessageNotificationService.class));
+            Intent serviceIntent = new Intent(SigninActivity.this, MessageNotificationService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
             Intent intent = new Intent(SigninActivity.this, MainActivity.class);
             startActivity(intent);
             finish();

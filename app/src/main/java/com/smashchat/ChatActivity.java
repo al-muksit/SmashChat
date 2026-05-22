@@ -330,7 +330,7 @@ public class ChatActivity extends BaseActivity {
             finish();
             return true;
         } else if (id == R.id.mute_menu) {
-            Toast.makeText(this, "Notifications settings coming soon", Toast.LENGTH_SHORT).show();
+            showMuteDialog();
             return true;
         } else if (id == R.id.delete_chat_menu) {
             showDeleteConfirmation();
@@ -341,6 +341,42 @@ public class ChatActivity extends BaseActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showMuteDialog() {
+        String[] options = {"ON", "OFF"};
+
+        // Fetch current mute status from Firebase
+        // Path: UserProfiles / <myUid> / MutedUsers / <otherUid>
+        database.getReference().child("UserProfiles").child(senderId).child("MutedUsers").child(receiverId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        // If value is true, it means the user is muted (Mute is ON)
+                        boolean isCurrentlyMuted = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
+                        int checkedItem = isCurrentlyMuted ? 0 : 1; // 0 for ON, 1 for OFF
+
+                        new AlertDialog.Builder(ChatActivity.this)
+                                .setTitle("Mute Notifications")
+                                .setSingleChoiceItems(options, checkedItem, (dialog, which) -> {
+                                    boolean mute = (which == 0);
+                                    database.getReference().child("UserProfiles").child(senderId)
+                                            .child("MutedUsers").child(receiverId).setValue(mute)
+                                            .addOnSuccessListener(unused -> {
+                                                String status = mute ? "Muted" : "Unmuted";
+                                                Toast.makeText(ChatActivity.this, "Notifications " + status, Toast.LENGTH_SHORT).show();
+                                                dialog.dismiss();
+                                            });
+                                })
+                                .setNegativeButton("Cancel", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(ChatActivity.this, "Failed to load mute settings", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void showDeleteConfirmation() {

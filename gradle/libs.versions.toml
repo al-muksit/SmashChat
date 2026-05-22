@@ -21,6 +21,7 @@ firebaseDatabase = "21.0.0"
 firebaseAnalytics = "22.0.2"
 firebaseStorage = "21.0.0"
 activityKtx = "1.13.0"
+swiperefreshlayout = "1.1.0"
 
 [libraries]
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
@@ -46,6 +47,7 @@ firebase-database = { group = "com.google.firebase", name = "firebase-database",
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
+swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
