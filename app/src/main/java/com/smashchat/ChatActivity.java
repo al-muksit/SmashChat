@@ -1,7 +1,6 @@
 package com.smashchat;
 
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -50,8 +49,6 @@ public class ChatActivity extends BaseActivity {
     private ArrayList<Messages> messageList;
     private ChatAdapter chatAdapter;
     private Users receiverUser;
-    private MediaPlayer mediaPlayer;
-    private boolean isInitialLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +71,10 @@ public class ChatActivity extends BaseActivity {
 
         database = FirebaseDatabase.getInstance();
         auth = FirebaseAuth.getInstance();
-        mediaPlayer = MediaPlayer.create(this, R.raw.messages_sound);
 
         senderId = auth.getUid();
         receiverId = getIntent().getStringExtra("userId");
+        currentChatUserId = receiverId;
         String userName = getIntent().getStringExtra("userName");
         String profilePic = getIntent().getStringExtra("profilePic");
 
@@ -209,11 +206,9 @@ public class ChatActivity extends BaseActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        int previousSize = messageList.size();
                         if (!snapshot.exists()) {
                             messageList.clear();
                             chatAdapter.notifyDataSetChanged();
-                            isInitialLoad = false;
                             return;
                         }
                         messageList.clear();
@@ -223,19 +218,7 @@ public class ChatActivity extends BaseActivity {
                         }
                         chatAdapter.notifyDataSetChanged();
 
-                        // Play sound if new message is received from other user
-                        if (!isInitialLoad && messageList.size() > previousSize) {
-                            Messages lastMessage = messageList.get(messageList.size() - 1);
-                            if (lastMessage != null && !senderId.equals(lastMessage.getuId())) {
-                                if (mediaPlayer != null) {
-                                    mediaPlayer.seekTo(0);
-                                    mediaPlayer.start();
-                                }
-                            }
-                        }
-                        isInitialLoad = false;
-
-                        if (messageList.size() > 0) {
+                        if (!messageList.isEmpty()) {
                             binding.chatRecyclerView.smoothScrollToPosition(messageList.size() - 1);
                         }
                         
@@ -404,10 +387,7 @@ public class ChatActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        currentChatUserId = null;
     }
 
     @Override

@@ -14,6 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.smashchat.BaseActivity;
 import com.smashchat.MainActivity;
+import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.databinding.ActivitySigninBinding;
 
 import java.util.Objects;
@@ -76,6 +77,8 @@ public class SigninActivity extends BaseActivity {
                         progressDialog.dismiss();
                         if (task.isSuccessful()) {
                             Toast.makeText(SigninActivity.this, "Logged in Successfully", Toast.LENGTH_SHORT).show();
+                            // Start Notification Service
+                            startService(new Intent(SigninActivity.this, MessageNotificationService.class));
                             // Navigate to MainActivity
                             Intent intent = new Intent(SigninActivity.this, MainActivity.class);
                             startActivity(intent);
@@ -97,6 +100,8 @@ public class SigninActivity extends BaseActivity {
 
         // Check if user is already logged in
         if (firebaseAuth.getCurrentUser() != null) {
+            // Start Notification Service
+            startService(new Intent(SigninActivity.this, MessageNotificationService.class));
             Intent intent = new Intent(SigninActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
