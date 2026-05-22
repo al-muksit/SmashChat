@@ -23,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.smashchat.AccountDetails.ProfileActivity;
 import com.smashchat.Adapter.UsersAdapter;
 import com.smashchat.Models.Users;
+import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityMainBinding;
 
@@ -92,6 +93,9 @@ public class MainActivity extends BaseActivity {
         // Fetch users from Firebase Realtime Database
         fetchBlockedLists();
         fetchUsers();
+
+        // Start Notification Service if not running
+        startService(new Intent(this, MessageNotificationService.class));
     }
 
     private void fetchBlockedLists() {
