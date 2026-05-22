@@ -1,15 +1,21 @@
 package com.smashchat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -24,7 +30,6 @@ import com.smashchat.AccountDetails.ProfileActivity;
 import com.smashchat.Adapter.UsersAdapter;
 import com.smashchat.Models.Users;
 import com.smashchat.Services.MessageNotificationService;
-import com.smashchat.Utils.PreferenceManager;
 import com.smashchat.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
@@ -94,8 +99,32 @@ public class MainActivity extends BaseActivity {
         fetchBlockedLists();
         fetchUsers();
 
+        // Request Notification Permission for Android 13+
+        requestNotificationPermission();
+
+        // Setup SwipeRefreshLayout
+        binding.swipeRefreshLayout.setOnRefreshListener(() -> {
+            fetchBlockedLists();
+            fetchUsers();
+            // Stop refreshing after a short delay to give visual feedback
+            new Handler().postDelayed(() -> binding.swipeRefreshLayout.setRefreshing(false), 1000);
+        });
+
         // Start Notification Service if not running
-        startService(new Intent(this, MessageNotificationService.class));
+        Intent serviceIntent = new Intent(this, MessageNotificationService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
     }
 
     private void fetchBlockedLists() {

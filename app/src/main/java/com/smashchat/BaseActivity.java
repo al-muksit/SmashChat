@@ -19,6 +19,7 @@ import com.smashchat.Utils.PreferenceManager;
  */
 public class BaseActivity extends AppCompatActivity {
 
+    private static int activityCount = 0;
     public static boolean isAppInForeground = false;
     public static String currentChatUserId = null;
 
@@ -70,9 +71,24 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        activityCount++;
+        isAppInForeground = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        activityCount--;
+        if (activityCount == 0) {
+            isAppInForeground = false;
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-        isAppInForeground = true;
         // Cancel any pending offline update since the user is still in the app
         if (offlineRunnable != null) {
             statusHandler.removeCallbacks(offlineRunnable);
@@ -84,7 +100,6 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        isAppInForeground = false;
         // Schedule an offline update with a slight delay (2 seconds)
         // This prevents the user from appearing "Offline" during activity transitions
         offlineRunnable = () -> updateStatus("Offline");
