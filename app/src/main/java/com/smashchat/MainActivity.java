@@ -303,8 +303,21 @@ public class MainActivity extends BaseActivity {
                                                                 if (timestamp != null) user.setLastMessageTime(timestamp);
                                                                 user.setRead(isRead != null ? isRead : true);
                                                             }
-                                                            
-                                                            updateUserInList(user);
+
+                                                            // Fetch Mute Status
+                                                            firebaseDatabase.getReference().child("UserProfiles").child(currentUid)
+                                                                    .child("MutedUsers").child(otherUserId)
+                                                                    .addValueEventListener(new ValueEventListener() {
+                                                                        @Override
+                                                                        public void onDataChange(@NonNull DataSnapshot muteSnapshot) {
+                                                                            boolean isMuted = muteSnapshot.exists() && Boolean.TRUE.equals(muteSnapshot.getValue(Boolean.class));
+                                                                            user.setMuted(isMuted);
+                                                                            updateUserInList(user);
+                                                                        }
+
+                                                                        @Override
+                                                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                                                    });
                                                         }
 
                                                         @Override

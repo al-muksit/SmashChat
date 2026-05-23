@@ -16,6 +16,7 @@ public class Users {
     private String status;
     private long lastMessageTime;
     private boolean read = true;
+    private boolean muted = false;
 
     /**
      * Full constructor for a user.
@@ -94,6 +95,14 @@ public class Users {
 
     public void setRead(boolean read) {
         this.read = read;
+    }
+
+    public boolean isMuted() {
+        return muted;
+    }
+
+    public void setMuted(boolean muted) {
+        this.muted = muted;
     }
 
     public long getLastMessageTime() {
