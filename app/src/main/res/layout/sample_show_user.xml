@@ -37,21 +37,23 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:layout_marginStart="15dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12sp"
+        android:weightSum="1"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/userName"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/user_name"
@@ -61,26 +63,26 @@
                 android:ellipsize="end"
                 android:textStyle="bold" />
 
-            <ImageView
-                android:id="@+id/mute_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center_vertical"
-                android:layout_marginEnd="8dp"
-                android:src="@drawable/mute_icon"
-                android:visibility="gone" />
+            <TextView
+                android:id="@+id/userStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorSecondary"
+                android:text="Offline"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="13sp" />
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/userStatusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="?android:attr/textColorSecondary"
-            android:text="Offline"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textSize="13sp" />
+        <ImageView
+            android:id="@+id/mute_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/mute_icon"
+            android:visibility="gone" />
+
     </LinearLayout>
 
 

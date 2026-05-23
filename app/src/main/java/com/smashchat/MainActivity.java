@@ -312,7 +312,11 @@ public class MainActivity extends BaseActivity {
                                                                         public void onDataChange(@NonNull DataSnapshot muteSnapshot) {
                                                                             boolean isMuted = muteSnapshot.exists() && Boolean.TRUE.equals(muteSnapshot.getValue(Boolean.class));
                                                                             user.setMuted(isMuted);
-                                                                            updateUserInList(user);
+                                                                            
+                                                                            // Force refresh the list item
+                                                                            runOnUiThread(() -> {
+                                                                                updateUserInList(user);
+                                                                            });
                                                                         }
 
                                                                         @Override
