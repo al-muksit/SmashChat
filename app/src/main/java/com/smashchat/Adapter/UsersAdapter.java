@@ -106,6 +106,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
                 holder.statusIndicator.setVisibility(View.GONE);
             }
 
+            // Show/Hide Mute Icon
+            if (users.isMuted()) {
+                holder.muteIcon.setVisibility(View.VISIBLE);
+            } else {
+                holder.muteIcon.setVisibility(View.GONE);
+            }
+
             // Set click listener
             holder.itemView.setOnClickListener(v -> {
                 String userId = users.getUserId();
@@ -138,13 +145,14 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
      * ViewHolder class to hold references to the UI components for each list item.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
+        ImageView imageView, muteIcon;
         TextView userName, userStatus;
         View statusIndicator;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.profile_image);
+            muteIcon = itemView.findViewById(R.id.mute_icon);
             userName = itemView.findViewById(R.id.userName);
             userStatus = itemView.findViewById(R.id.userStatusText);
             statusIndicator = itemView.findViewById(R.id.statusIndicator);
