@@ -77,6 +77,13 @@ public class MainActivity extends BaseActivity {
         binding.userRecyclerView.setAdapter(usersAdapter);
         binding.userRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Load cached history
+        userList = preferenceManager.getChatHistory();
+        displayedList.clear();
+        displayedList.addAll(userList);
+        usersAdapter.notifyDataSetChanged();
+        updateEmptyState();
+
         // Setup Search with Debouncing
         binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
             @Override
@@ -395,6 +402,7 @@ public class MainActivity extends BaseActivity {
         java.util.Collections.sort(userList, (u1, u2) -> 
                 Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
         
+        preferenceManager.saveChatHistory(userList);
         updateDisplayList();
     }
 

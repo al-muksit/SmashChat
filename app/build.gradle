@@ -39,6 +39,7 @@ android {
         implementation libs.constraintlayout
         implementation libs.annotation
         implementation libs.swiperefreshlayout
+        implementation libs.gson
         implementation libs.lifecycle.livedata.ktx
         implementation libs.lifecycle.viewmodel.ktx
         

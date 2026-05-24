@@ -14,6 +14,7 @@ public class PreferenceManager {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_DARK_MODE = "darkMode_v2"; // Using new key for int mode
     private static final String KEY_ACTIVE_STATUS = "activeStatus";
+    private static final String KEY_CHAT_HISTORY = "chatHistory";
     public static final int THEME_OFF = 0;
     public static final int THEME_ON = 1;
     public static final int THEME_SYSTEM = 2;
@@ -69,6 +70,22 @@ public class PreferenceManager {
 
     public String getProfilePic() {
         return sharedPreferences.getString(KEY_PROFILE_PIC, "");
+    }
+
+    public void saveChatHistory(java.util.ArrayList<com.smashchat.Models.Users> users) {
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        String json = gson.toJson(users);
+        editor.putString(KEY_CHAT_HISTORY, json);
+        editor.apply();
+    }
+
+    public java.util.ArrayList<com.smashchat.Models.Users> getChatHistory() {
+        String json = sharedPreferences.getString(KEY_CHAT_HISTORY, null);
+        if (json == null) return new java.util.ArrayList<>();
+        
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<java.util.ArrayList<com.smashchat.Models.Users>>() {}.getType();
+        return gson.fromJson(json, type);
     }
 
     public void clear() {
