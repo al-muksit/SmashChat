@@ -49,6 +49,7 @@ public class ChatActivity extends BaseActivity {
     private ArrayList<Messages> messageList;
     private ChatAdapter chatAdapter;
     private Users receiverUser;
+    private com.smashchat.Utils.DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +72,7 @@ public class ChatActivity extends BaseActivity {
 
         database = FirebaseDatabase.getInstance();
         auth = FirebaseAuth.getInstance();
+        databaseHelper = new com.smashchat.Utils.DatabaseHelper(this);
 
         senderId = auth.getUid();
         receiverId = getIntent().getStringExtra("userId");
@@ -100,7 +102,11 @@ public class ChatActivity extends BaseActivity {
             if (tvUserName != null) tvUserName.setText(userName != null ? userName : "Chat");
             
             if (ivProfile != null) {
-                if (profilePic != null && !profilePic.isEmpty()) {
+                // Try loading from local database first
+                android.graphics.Bitmap localBitmap = databaseHelper.getImage(receiverId);
+                if (localBitmap != null) {
+                    ivProfile.setImageBitmap(localBitmap);
+                } else if (profilePic != null && !profilePic.isEmpty()) {
                     Picasso.get().load(profilePic).placeholder(R.drawable.profile).into(ivProfile);
                 } else {
                     ivProfile.setImageResource(R.drawable.profile);
@@ -166,6 +172,14 @@ public class ChatActivity extends BaseActivity {
         layoutManager.setStackFromEnd(true); // Ensures messages start from the bottom
         binding.chatRecyclerView.setLayoutManager(layoutManager);
 
+        // Load messages from local database first
+        ArrayList<Messages> localMessages = databaseHelper.getMessages(senderRoom);
+        if (!localMessages.isEmpty()) {
+            messageList.addAll(localMessages);
+            chatAdapter.notifyDataSetChanged();
+            binding.chatRecyclerView.scrollToPosition(messageList.size() - 1);
+        }
+
         // Scroll to bottom when keyboard appears
         binding.chatRecyclerView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             if (bottom < oldBottom) {
@@ -215,6 +229,8 @@ public class ChatActivity extends BaseActivity {
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             Messages model = ds.getValue(Messages.class);
                             messageList.add(model);
+                            // Save to local database
+                            databaseHelper.saveMessage(senderRoom, ds.getKey(), model);
                         }
                         chatAdapter.notifyDataSetChanged();
 

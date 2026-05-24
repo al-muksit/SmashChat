@@ -25,10 +25,12 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
     
     private final ArrayList<Users> list;
     private final Context context;
+    private final com.smashchat.Utils.DatabaseHelper databaseHelper;
 
     public UsersAdapter(ArrayList<Users> list, Context context) {
         this.list = list;
         this.context = context;
+        this.databaseHelper = new com.smashchat.Utils.DatabaseHelper(context);
     }
 
     @NonNull
@@ -44,8 +46,11 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         try {
             Users users = list.get(position);
             
-            // Load profile picture with fallback for empty/null strings
-            if (users.getProfilePic() != null && !users.getProfilePic().isEmpty()) {
+            // Try loading from local database first
+            android.graphics.Bitmap localBitmap = databaseHelper.getImage(users.getUserId());
+            if (localBitmap != null) {
+                holder.imageView.setImageBitmap(localBitmap);
+            } else if (users.getProfilePic() != null && !users.getProfilePic().isEmpty()) {
                 Picasso.get()
                         .load(users.getProfilePic())
                         .placeholder(R.drawable.profile)

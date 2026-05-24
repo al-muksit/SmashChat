@@ -123,14 +123,34 @@ public class ProfileActivity extends BaseActivity {
                             binding.etCustomId.setText(user.getCustomId());
                             currentProfilePicUrl = user.getProfilePic();
 
-                            // Load from Firebase if not in SQLite
-                            if (localBitmap == null) {
-                                if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
-                                    Picasso.get().load(user.getProfilePic())
-                                            .placeholder(R.drawable.profile)
-                                            .error(R.drawable.profile)
-                                            .into(binding.profileImage);
-                                } else {
+                            // Load from Firebase if not in SQLite or refresh anyway
+                            if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+                                Picasso.get().load(user.getProfilePic())
+                                        .placeholder(R.drawable.profile)
+                                        .error(R.drawable.profile)
+                                        .into(new com.squareup.picasso.Target() {
+                                            @Override
+                                            public void onBitmapLoaded(android.graphics.Bitmap bitmap, Picasso.LoadedFrom from) {
+                                                binding.profileImage.setImageBitmap(bitmap);
+                                                databaseHelper.saveImage(uid, bitmap);
+                                            }
+
+                                            @Override
+                                            public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
+                                                if (localBitmap == null) {
+                                                    binding.profileImage.setImageResource(R.drawable.profile);
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onPrepareLoad(android.graphics.drawable.Drawable placeHolderDrawable) {
+                                                if (localBitmap == null) {
+                                                    binding.profileImage.setImageDrawable(placeHolderDrawable);
+                                                }
+                                            }
+                                        });
+                            } else {
+                                if (localBitmap == null) {
                                     binding.profileImage.setImageResource(R.drawable.profile);
                                 }
                             }
