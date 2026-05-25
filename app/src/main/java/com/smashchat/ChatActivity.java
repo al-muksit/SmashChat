@@ -133,11 +133,31 @@ public class ChatActivity extends BaseActivity {
                                     }
                                 }
                                 
-                                // Update Name/Pic if changed
+                                // Update Name if changed
                                 if (tvUserName != null) tvUserName.setText(receiverUser.getUserName());
-                                if (ivProfile != null && (profilePic == null || profilePic.isEmpty())) {
+
+                                // Update Pic if changed
+                                if (ivProfile != null) {
                                     if (receiverUser.getProfilePic() != null && !receiverUser.getProfilePic().isEmpty()) {
-                                        Picasso.get().load(receiverUser.getProfilePic()).placeholder(R.drawable.profile).into(ivProfile);
+                                        Picasso.get().load(receiverUser.getProfilePic())
+                                                .placeholder(R.drawable.profile)
+                                                .into(new com.squareup.picasso.Target() {
+                                                    @Override
+                                                    public void onBitmapLoaded(android.graphics.Bitmap bitmap, Picasso.LoadedFrom from) {
+                                                        ivProfile.setImageBitmap(bitmap);
+                                                        databaseHelper.saveImage(receiverId, bitmap);
+                                                    }
+
+                                                    @Override
+                                                    public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
+                                                        ivProfile.setImageDrawable(errorDrawable);
+                                                    }
+
+                                                    @Override
+                                                    public void onPrepareLoad(android.graphics.drawable.Drawable placeHolderDrawable) {
+                                                        ivProfile.setImageDrawable(placeHolderDrawable);
+                                                    }
+                                                });
                                     }
                                 }
                             }
