@@ -24,6 +24,7 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
     private ArrayList<Users> list;
     private Context context;
     private OnUnblockListener onUnblockListener;
+    private com.smashchat.Utils.DatabaseHelper databaseHelper;
 
     public interface OnUnblockListener {
         void onUnblock(Users user);
@@ -33,6 +34,7 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
         this.list = list;
         this.context = context;
         this.onUnblockListener = onUnblockListener;
+        this.databaseHelper = new com.smashchat.Utils.DatabaseHelper(context);
     }
 
     @NonNull
@@ -46,8 +48,31 @@ public class BlockedUsersAdapter extends RecyclerView.Adapter<BlockedUsersAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Users user = list.get(position);
 
-        if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
-            Picasso.get().load(user.getProfilePic()).placeholder(R.drawable.profile).into(holder.image);
+        // Try loading from local database first
+        android.graphics.Bitmap localBitmap = databaseHelper.getImage(user.getUserId());
+        if (localBitmap != null) {
+            holder.image.setImageBitmap(localBitmap);
+        } else if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+            Picasso.get().load(user.getProfilePic())
+                    .placeholder(R.drawable.profile)
+                    .error(R.drawable.profile)
+                    .into(new com.squareup.picasso.Target() {
+                        @Override
+                        public void onBitmapLoaded(android.graphics.Bitmap bitmap, Picasso.LoadedFrom from) {
+                            holder.image.setImageBitmap(bitmap);
+                            databaseHelper.saveImage(user.getUserId(), bitmap);
+                        }
+
+                        @Override
+                        public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
+                            holder.image.setImageDrawable(errorDrawable);
+                        }
+
+                        @Override
+                        public void onPrepareLoad(android.graphics.drawable.Drawable placeHolderDrawable) {
+                            holder.image.setImageDrawable(placeHolderDrawable);
+                        }
+                    });
         } else {
             holder.image.setImageResource(R.drawable.profile);
         }

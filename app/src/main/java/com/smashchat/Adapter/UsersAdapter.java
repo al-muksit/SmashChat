@@ -55,7 +55,23 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
                         .load(users.getProfilePic())
                         .placeholder(R.drawable.profile)
                         .error(R.drawable.profile)
-                        .into(holder.imageView);
+                        .into(new com.squareup.picasso.Target() {
+                            @Override
+                            public void onBitmapLoaded(android.graphics.Bitmap bitmap, Picasso.LoadedFrom from) {
+                                holder.imageView.setImageBitmap(bitmap);
+                                databaseHelper.saveImage(users.getUserId(), bitmap);
+                            }
+
+                            @Override
+                            public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
+                                holder.imageView.setImageDrawable(errorDrawable);
+                            }
+
+                            @Override
+                            public void onPrepareLoad(android.graphics.drawable.Drawable placeHolderDrawable) {
+                                holder.imageView.setImageDrawable(placeHolderDrawable);
+                            }
+                        });
             } else {
                 holder.imageView.setImageResource(R.drawable.profile);
             }

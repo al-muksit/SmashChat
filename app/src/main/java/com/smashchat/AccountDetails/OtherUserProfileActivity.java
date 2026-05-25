@@ -20,6 +20,7 @@ import com.smashchat.R;
 public class OtherUserProfileActivity extends BaseActivity {
 
     private ActivityOtherUserProfileBinding binding;
+    private com.smashchat.Utils.DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +36,10 @@ public class OtherUserProfileActivity extends BaseActivity {
             return insets;
         });
 
+        databaseHelper = new com.smashchat.Utils.DatabaseHelper(this);
+
         // Get data from intent
+        String userId = getIntent().getStringExtra("userId");
         String name = getIntent().getStringExtra("userName");
         String email = getIntent().getStringExtra("email");
         String phone = getIntent().getStringExtra("phone");
@@ -61,11 +65,31 @@ public class OtherUserProfileActivity extends BaseActivity {
         binding.tvAddress.setText(address != null && !address.isEmpty() ? address : "No address provided");
         binding.tvCustomId.setText(customId != null && !customId.isEmpty() ? customId : "No ID provided");
 
-        if (profilePic != null && !profilePic.isEmpty()) {
+        // Try loading from local database first
+        android.graphics.Bitmap localBitmap = databaseHelper.getImage(userId);
+        if (localBitmap != null) {
+            binding.profileImage.setImageBitmap(localBitmap);
+        } else if (profilePic != null && !profilePic.isEmpty()) {
             Picasso.get().load(profilePic)
                     .placeholder(R.drawable.profile)
                     .error(R.drawable.profile)
-                    .into(binding.profileImage);
+                    .into(new com.squareup.picasso.Target() {
+                        @Override
+                        public void onBitmapLoaded(android.graphics.Bitmap bitmap, Picasso.LoadedFrom from) {
+                            binding.profileImage.setImageBitmap(bitmap);
+                            databaseHelper.saveImage(userId, bitmap);
+                        }
+
+                        @Override
+                        public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
+                            binding.profileImage.setImageDrawable(errorDrawable);
+                        }
+
+                        @Override
+                        public void onPrepareLoad(android.graphics.drawable.Drawable placeHolderDrawable) {
+                            binding.profileImage.setImageDrawable(placeHolderDrawable);
+                        }
+                    });
         } else {
             binding.profileImage.setImageResource(R.drawable.profile);
         }

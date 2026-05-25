@@ -19,8 +19,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.smashchat.BaseActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.R;
@@ -40,7 +38,6 @@ public class ProfileActivity extends BaseActivity {
     private ActivityProfileBinding binding;
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
-    private FirebaseStorage firebaseStorage;
     private DatabaseHelper databaseHelper;
     private ProgressDialog progressDialog;
     private Uri selectedImage;
@@ -63,7 +60,6 @@ public class ProfileActivity extends BaseActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseStorage = FirebaseStorage.getInstance();
         databaseHelper = new DatabaseHelper(this);
 
         progressDialog = new ProgressDialog(this);
@@ -123,9 +119,9 @@ public class ProfileActivity extends BaseActivity {
                             binding.etCustomId.setText(user.getCustomId());
                             currentProfilePicUrl = user.getProfilePic();
 
-                            // Load from Firebase if not in SQLite or refresh anyway
-                            if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
-                                Picasso.get().load(user.getProfilePic())
+                            // Load and cache if not present or refresh
+                            if (currentProfilePicUrl != null && !currentProfilePicUrl.isEmpty()) {
+                                Picasso.get().load(currentProfilePicUrl)
                                         .placeholder(R.drawable.profile)
                                         .error(R.drawable.profile)
                                         .into(new com.squareup.picasso.Target() {
@@ -138,7 +134,7 @@ public class ProfileActivity extends BaseActivity {
                                             @Override
                                             public void onBitmapFailed(Exception e, android.graphics.drawable.Drawable errorDrawable) {
                                                 if (localBitmap == null) {
-                                                    binding.profileImage.setImageResource(R.drawable.profile);
+                                                    binding.profileImage.setImageDrawable(errorDrawable);
                                                 }
                                             }
 
@@ -149,10 +145,6 @@ public class ProfileActivity extends BaseActivity {
                                                 }
                                             }
                                         });
-                            } else {
-                                if (localBitmap == null) {
-                                    binding.profileImage.setImageResource(R.drawable.profile);
-                                }
                             }
                         }
                     }
@@ -203,25 +195,31 @@ public class ProfileActivity extends BaseActivity {
 
     private void uploadImageAndSave(String uid, String customId) {
         if (selectedImage != null) {
-            // Save to SQLite
             try {
                 android.graphics.Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                
+                // Save locally first
                 databaseHelper.saveImage(uid, bitmap);
+                
+                // Upload to ImgBB for sharing
+                com.smashchat.Utils.ImgBBService.uploadImage(bitmap, new com.smashchat.Utils.ImgBBService.UploadCallback() {
+                    @Override
+                    public void onSuccess(String imageUrl) {
+                        runOnUiThread(() -> saveToDatabase(uid, customId, imageUrl));
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        runOnUiThread(() -> {
+                            progressDialog.dismiss();
+                            Toast.makeText(ProfileActivity.this, "Upload failed: " + error, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
             } catch (java.io.IOException e) {
+                progressDialog.dismiss();
                 e.printStackTrace();
             }
-
-            StorageReference reference = firebaseStorage.getReference().child("Profiles").child(uid);
-            reference.putFile(selectedImage).addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    reference.getDownloadUrl().addOnSuccessListener(uri -> {
-                        saveToDatabase(uid, customId, uri.toString());
-                    });
-                } else {
-                    progressDialog.dismiss();
-                    Toast.makeText(this, "Failed to upload image", Toast.LENGTH_SHORT).show();
-                }
-            });
         } else {
             saveToDatabase(uid, customId, currentProfilePicUrl);
         }
@@ -234,7 +232,7 @@ public class ProfileActivity extends BaseActivity {
         updates.put("phone", binding.etPhone.getText().toString().trim());
         updates.put("address", binding.etAddress.getText().toString().trim());
         updates.put("customId", customId);
-        updates.put("profilePic", imageUrl);
+        updates.put("profilePic", imageUrl != null ? imageUrl : "");
 
         firebaseDatabase.getReference().child("UserProfiles").child(uid).updateChildren(updates)
                 .addOnCompleteListener(task -> {

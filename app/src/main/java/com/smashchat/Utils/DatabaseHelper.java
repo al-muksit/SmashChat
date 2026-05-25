@@ -139,5 +139,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void clear() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_IMAGES);
+        db.execSQL("DELETE FROM " + TABLE_MESSAGES);
     }
 }
