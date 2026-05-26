@@ -19,6 +19,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.BaseActivity;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivitySignupBinding;
 
 import java.util.Objects;
@@ -91,7 +92,8 @@ public class SignupActivity extends BaseActivity {
                                         .addOnCompleteListener(task -> {
                                             if (task.isSuccessful()) {
                                                 String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
-                                                saveUserToDatabase(id, nameStr, emailStr, passStr, finalCustomId);
+                                                String hashedPassword = HashAlgorithm.hashPassword(passStr, id);
+                                                saveUserToDatabase(id, nameStr, emailStr, hashedPassword, finalCustomId);
                                             } else {
                                                 progressDialog.dismiss();
                                                 Toast.makeText(SignupActivity.this, 
