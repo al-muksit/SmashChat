@@ -87,12 +87,13 @@ public class SignupActivity extends BaseActivity {
                                 progressDialog.dismiss();
                                 Toast.makeText(SignupActivity.this, "This User ID is already taken. Try another.", Toast.LENGTH_SHORT).show();
                             } else {
-                                // Create account
-                                firebaseAuth.createUserWithEmailAndPassword(emailStr, passStr)
+                                // Create account with hashed password
+                                String hashedPassword = HashAlgorithm.hashPassword(passStr, emailStr);
+                                
+                                firebaseAuth.createUserWithEmailAndPassword(emailStr, hashedPassword)
                                         .addOnCompleteListener(task -> {
                                             if (task.isSuccessful()) {
                                                 String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
-                                                String hashedPassword = HashAlgorithm.hashPassword(passStr, id);
                                                 saveUserToDatabase(id, nameStr, emailStr, hashedPassword, finalCustomId);
                                             } else {
                                                 progressDialog.dismiss();

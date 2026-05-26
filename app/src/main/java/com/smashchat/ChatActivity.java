@@ -28,6 +28,7 @@ import com.smashchat.AccountDetails.OtherUserProfileActivity;
 import com.smashchat.Adapter.ChatAdapter;
 import com.smashchat.Models.Messages;
 import com.smashchat.Models.Users;
+import com.smashchat.Utils.AESalgorithm;
 import com.smashchat.databinding.ActivityChatBinding;
 import com.squareup.picasso.Picasso;
 
@@ -183,6 +184,7 @@ public class ChatActivity extends BaseActivity {
 
         senderRoom = senderId + receiverId;
         receiverIdRoom = receiverId + senderId;
+        String sharedSecretKey = (senderId.compareTo(receiverId) < 0) ? (senderId + receiverId) : (receiverId + senderId);
 
         messageList = new ArrayList<>();
         chatAdapter = new ChatAdapter(messageList, this, receiverId);
@@ -248,9 +250,13 @@ public class ChatActivity extends BaseActivity {
                         messageList.clear();
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             Messages model = ds.getValue(Messages.class);
-                            messageList.add(model);
-                            // Save to local database
-                            databaseHelper.saveMessage(senderRoom, ds.getKey(), model);
+                            if (model != null) {
+                                // Decrypt message for display and local storage
+                                model.setMessage(AESalgorithm.decrypt(model.getMessage(), sharedSecretKey));
+                                messageList.add(model);
+                                // Save to local database
+                                databaseHelper.saveMessage(senderRoom, ds.getKey(), model);
+                            }
                         }
                         chatAdapter.notifyDataSetChanged();
 
@@ -332,21 +338,30 @@ public class ChatActivity extends BaseActivity {
 
     private void sendMessage(String message, int type) {
         long currentTimestamp = new Date().getTime();
-        final Messages model = new Messages(senderId, message, currentTimestamp, type);
+        String sharedSecretKey = (senderId.compareTo(receiverId) < 0) ? (senderId + receiverId) : (receiverId + senderId);
+        
+        // Encrypt message for storage in Firebase
+        String encryptedMessage = AESalgorithm.encrypt(message, sharedSecretKey);
+        final Messages model = new Messages(senderId, encryptedMessage, currentTimestamp, type);
         binding.etMessage.setText("");
 
         database.getReference().child("Messages").child(senderRoom).push().setValue(model)
                 .addOnSuccessListener(unused -> {
                     database.getReference().child("Messages").child(receiverIdRoom).push().setValue(model)
                             .addOnSuccessListener(unused1 -> {
-                                // Update last interaction time for both users
-                                database.getReference().child("UserChats").child(senderId).child(receiverId).child("timestamp").setValue(currentTimestamp);
-                                database.getReference().child("UserChats").child(senderId).child(receiverId).child("read").setValue(true);
-                                
-                                database.getReference().child("UserChats").child(receiverId).child(senderId).child("timestamp").setValue(currentTimestamp);
-                                database.getReference().child("UserChats").child(receiverId).child(senderId).child("read").setValue(false);
+                                // Update last interaction time and last message for both users
+                                updateLastChatInfo(senderId, receiverId, currentTimestamp, encryptedMessage, true);
+                                updateLastChatInfo(receiverId, senderId, currentTimestamp, encryptedMessage, false);
                             });
                 });
+    }
+
+    private void updateLastChatInfo(String uid, String otherId, long timestamp, String encryptedLastMsg, boolean read) {
+        java.util.HashMap<String, Object> map = new java.util.HashMap<>();
+        map.put("timestamp", timestamp);
+        map.put("lastMessage", encryptedLastMsg);
+        map.put("read", read);
+        database.getReference().child("UserChats").child(uid).child(otherId).updateChildren(map);
     }
 
     @Override
