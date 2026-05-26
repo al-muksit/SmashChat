@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.smashchat.BaseActivity;
 import com.smashchat.MainActivity;
 import com.smashchat.Services.MessageNotificationService;
+import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivitySigninBinding;
 
 import java.util.Objects;
@@ -72,8 +73,11 @@ public class SigninActivity extends BaseActivity {
 
             progressDialog.show();
             
-            // Sign in with Firebase Auth
-            firebaseAuth.signInWithEmailAndPassword(emailStr, passStr)
+            // Hash password with email as salt before signing in
+            String hashedPassword = HashAlgorithm.hashPassword(passStr, emailStr);
+            
+            // Sign in with Firebase Auth using hashed password
+            firebaseAuth.signInWithEmailAndPassword(emailStr, hashedPassword)
                     .addOnCompleteListener(task -> {
                         progressDialog.dismiss();
                         if (task.isSuccessful()) {

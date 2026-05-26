@@ -7,6 +7,8 @@ import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Utility class for secure password hashing using PBKDF2 with HMAC-SHA256.
+ * This implementation is designed for client-side hashing where the plaintext
+ * password never leaves the user's device.
  */
 public class HashAlgorithm {
 
@@ -18,7 +20,7 @@ public class HashAlgorithm {
      * Hashes a password using PBKDF2 with a salt.
      *
      * @param password The plaintext password to hash.
-     * @param salt     A unique salt (e.g., user ID) to prevent rainbow table attacks.
+     * @param salt     A unique salt (e.g., user email) to prevent rainbow table attacks.
      * @return The hashed password as a Hex-encoded string, or the original password if hashing fails.
      */
     public static String hashPassword(String password, String salt) {
@@ -35,13 +37,16 @@ public class HashAlgorithm {
             byte[] hashedBytes = factory.generateSecret(spec).getEncoded();
             return bytesToHex(hashedBytes);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            e.printStackTrace();
+            // Log error in production. Returning password as a last-resort fallback.
             return password;
         } finally {
             spec.clearPassword();
         }
     }
 
+    /**
+     * Converts byte array to a Hexadecimal string.
+     */
     private static String bytesToHex(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {

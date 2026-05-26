@@ -29,6 +29,7 @@ import com.smashchat.BaseActivity;
 import com.smashchat.MainActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.R;
+import com.smashchat.Utils.AESalgorithm;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -246,7 +247,18 @@ public class MessageNotificationService extends Service {
                 lastProcessedTimestamps.put(senderId, timestamp);
                 
                 if (!BaseActivity.isAppInForeground) {
-                    fetchUserAndShowNotification(senderId, lastMessageText != null ? lastMessageText : "New message received");
+                    String myUid = auth.getUid();
+                    if (myUid != null) {
+                        String sharedSecretKey = (myUid.compareTo(senderId) < 0) ? (myUid + senderId) : (senderId + myUid);
+                        String decryptedMessage = AESalgorithm.decrypt(lastMessageText, sharedSecretKey);
+                        
+                        // User friendly text for special messages
+                        if ("[smile]".equals(decryptedMessage)) {
+                            decryptedMessage = "sent a smile emoji";
+                        }
+                        
+                        fetchUserAndShowNotification(senderId, decryptedMessage);
+                    }
                 } else {
                     if (BaseActivity.currentChatUserId == null || !Objects.equals(BaseActivity.currentChatUserId, senderId)) {
                         playNotificationSound();
