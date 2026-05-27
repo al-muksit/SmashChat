@@ -1,4 +1,4 @@
-package com.smashchat;
+package com.smashchat.Services;
 
 import android.os.Bundle;
 import android.os.Handler;

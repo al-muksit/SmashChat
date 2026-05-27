@@ -1,4 +1,4 @@
-package com.smashchat;
+package com.smashchat.Services;
 
 import android.app.Application;
 import com.google.firebase.database.FirebaseDatabase;

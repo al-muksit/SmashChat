@@ -1,16 +1,16 @@
-package com.smashchat;
+package com.smashchat.Others;
 
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
-import com.smashchat.Utils.PreferenceManager;
+import com.smashchat.R;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.databinding.ActivityActiveStatusBinding;
 
 public class ActiveStatusActivity extends BaseActivity {
