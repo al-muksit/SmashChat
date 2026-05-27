@@ -7,6 +7,8 @@ import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -18,6 +20,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
+import androidx.core.app.RemoteInput;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -25,11 +30,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.smashchat.BaseActivity;
-import com.smashchat.MainActivity;
+import com.smashchat.ChatActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.R;
 import com.smashchat.Utils.AESalgorithm;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +47,7 @@ import java.util.Objects;
  */
 public class MessageNotificationService extends Service {
 
+    public static final String KEY_TEXT_REPLY = "key_text_reply";
     private static final String TAG = "MessageNotifyService";
     private static final String CHANNEL_ID = "SmashChatMessages_v4";
     private static final String CHANNEL_NAME = "New Messages";
@@ -281,7 +288,25 @@ public class MessageNotificationService extends Service {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         Users user = snapshot.getValue(Users.class);
                         if (user != null) {
-                            showNotification(user.getUserName(), message, senderId);
+                            user.setUserId(snapshot.getKey());
+                            if (user.getProfilePic() != null && !user.getProfilePic().isEmpty()) {
+                                Picasso.get().load(user.getProfilePic()).into(new Target() {
+                                    @Override
+                                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                                        showNotification(user, message, bitmap);
+                                    }
+
+                                    @Override
+                                    public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+                                        showNotification(user, message, null);
+                                    }
+
+                                    @Override
+                                    public void onPrepareLoad(Drawable placeHolderDrawable) {}
+                                });
+                            } else {
+                                showNotification(user, message, null);
+                            }
                         }
                     }
 
@@ -292,32 +317,77 @@ public class MessageNotificationService extends Service {
                 });
     }
 
-    private void showNotification(String title, String message, String senderId) {
+    private void showNotification(Users user, String message, Bitmap largeIcon) {
+        String senderId = user.getUserId();
+        String title = user.getUserName();
         Log.d(TAG, "Displaying system notification for " + title);
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        // Intent for clicking the notification
+        Intent intent = new Intent(this, ChatActivity.class);
+        intent.putExtra("userId", senderId);
+        intent.putExtra("userName", title);
+        intent.putExtra("profilePic", user.getProfilePic());
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, intent, 
+                this, senderId.hashCode(), intent, 
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        // Action: Mark as Read
+        Intent markAsReadIntent = new Intent(this, NotificationReceiver.class);
+        markAsReadIntent.setAction(NotificationReceiver.ACTION_MARK_AS_READ);
+        markAsReadIntent.putExtra(NotificationReceiver.EXTRA_SENDER_ID, senderId);
+        PendingIntent markAsReadPendingIntent = PendingIntent.getBroadcast(
+                this, senderId.hashCode() + 1, markAsReadIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // Action: Reply
+        RemoteInput remoteInput = new RemoteInput.Builder(KEY_TEXT_REPLY)
+                .setLabel("Reply...")
+                .build();
+
+        Intent replyIntent = new Intent(this, NotificationReceiver.class);
+        replyIntent.setAction(NotificationReceiver.ACTION_REPLY);
+        replyIntent.putExtra(NotificationReceiver.EXTRA_SENDER_ID, senderId);
+        PendingIntent replyPendingIntent = PendingIntent.getBroadcast(
+                this, senderId.hashCode() + 2, replyIntent,
+                PendingIntent.FLAG_MUTABLE // Must be mutable for RemoteInput
+        );
+
+        NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(
+                R.drawable.send_btn, "Reply", replyPendingIntent)
+                .addRemoteInput(remoteInput)
+                .build();
+
         Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.messages_sound);
+
+        // Use MessagingStyle for professional look
+        Person sender = new Person.Builder()
+                .setName(title)
+                .setIcon(largeIcon != null ? IconCompat.createWithBitmap(largeIcon) : null)
+                .build();
+
+        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(sender)
+                .addMessage(message, System.currentTimeMillis(), sender);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(title)
-                .setContentText(message)
+                .setLargeIcon(largeIcon)
+                .setStyle(style)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setSound(soundUri)
                 .setAutoCancel(true)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setContentIntent(pendingIntent);
+                .setVibrate(new long[]{1000, 1000, 1000})
+                .setLights(0xFF00FF00, 3000, 3000)
+                .setContentIntent(pendingIntent)
+                .addAction(R.drawable.profile, "Mark as Read", markAsReadPendingIntent)
+                .addAction(replyAction);
 
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (manager != null) {
-            // Use sender's ID hash to allow multiple notifications from different people
             int id = (senderId != null) ? senderId.hashCode() : NOTIFICATION_ID;
             manager.notify(id, builder.build());
         }

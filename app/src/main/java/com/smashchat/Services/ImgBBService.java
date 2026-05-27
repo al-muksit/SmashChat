@@ -1,4 +1,4 @@
-package com.smashchat.Utils;
+package com.smashchat.Services;
 
 import android.graphics.Bitmap;
 import android.util.Base64;

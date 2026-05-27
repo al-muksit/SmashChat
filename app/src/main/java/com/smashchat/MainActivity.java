@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -29,6 +28,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.smashchat.AccountDetails.ProfileActivity;
 import com.smashchat.Adapter.UsersAdapter;
 import com.smashchat.Models.Users;
+import com.smashchat.Others.SettingsActivity;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.databinding.ActivityMainBinding;
 

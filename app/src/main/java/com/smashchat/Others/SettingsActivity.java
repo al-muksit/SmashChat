@@ -1,4 +1,4 @@
-package com.smashchat;
+package com.smashchat.Others;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,7 +13,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.smashchat.AccountDetails.BlockListActivity;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.databinding.ActivitySettingsBinding;
 
 import androidx.annotation.NonNull;

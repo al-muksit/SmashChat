@@ -17,7 +17,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.smashchat.BaseActivity;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivitySignupBinding;

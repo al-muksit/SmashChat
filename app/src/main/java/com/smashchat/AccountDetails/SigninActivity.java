@@ -13,7 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.smashchat.BaseActivity;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.MainActivity;
 import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.Utils.HashAlgorithm;

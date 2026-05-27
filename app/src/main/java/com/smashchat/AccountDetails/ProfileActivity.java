@@ -19,9 +19,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.smashchat.BaseActivity;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.R;
+import com.smashchat.Services.ImgBBService;
 import com.smashchat.Utils.DatabaseHelper;
 import com.smashchat.databinding.ActivityProfileBinding;
 import com.squareup.picasso.Picasso;
@@ -202,7 +203,7 @@ public class ProfileActivity extends BaseActivity {
                 databaseHelper.saveImage(uid, bitmap);
                 
                 // Upload to ImgBB for sharing
-                com.smashchat.Utils.ImgBBService.uploadImage(bitmap, new com.smashchat.Utils.ImgBBService.UploadCallback() {
+                ImgBBService.uploadImage(bitmap, new ImgBBService.UploadCallback() {
                     @Override
                     public void onSuccess(String imageUrl) {
                         runOnUiThread(() -> saveToDatabase(uid, customId, imageUrl));

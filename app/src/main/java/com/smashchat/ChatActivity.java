@@ -28,6 +28,7 @@ import com.smashchat.AccountDetails.OtherUserProfileActivity;
 import com.smashchat.Adapter.ChatAdapter;
 import com.smashchat.Models.Messages;
 import com.smashchat.Models.Users;
+import com.smashchat.Services.BaseActivity;
 import com.smashchat.Utils.AESalgorithm;
 import com.smashchat.databinding.ActivityChatBinding;
 import com.squareup.picasso.Picasso;
