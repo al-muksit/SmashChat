@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -25,68 +27,72 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.smashchat.AccountDetails.ProfileActivity;
 import com.smashchat.Adapter.UsersAdapter;
 import com.smashchat.Models.Users;
 import com.smashchat.Others.SettingsActivity;
 import com.smashchat.Services.BaseActivity;
-import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 public class MainActivity extends BaseActivity {
 
     private FirebaseDatabase firebaseDatabase;
     private ActivityMainBinding binding;
-    private ArrayList<Users> userList = new ArrayList<>(); // Active chats
-    private ArrayList<Users> displayedList = new ArrayList<>(); // Currently shown list
-    private ArrayList<String> blockedUsersList = new ArrayList<>(); // People I blocked
-    private ArrayList<String> blockedByList = new ArrayList<>(); // People who blocked me
-    private final java.util.HashMap<String, ValueEventListener> profileListeners = new java.util.HashMap<>();
+    private final ArrayList<Users> userList = new ArrayList<>(); // active chat list
+    private final ArrayList<Users> displayedList = new ArrayList<>(); // the ones actually on screen
+    private final ArrayList<String> blockedUsersList = new ArrayList<>(); // people I blocked
+    private final ArrayList<String> blockedByList = new ArrayList<>(); // people who blocked me
+    private final HashMap<String, ValueEventListener> profileListeners = new HashMap<>();
     private UsersAdapter usersAdapter;
-    private Handler searchHandler = new Handler();
+    private final Handler searchHandler = new Handler();
     private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Initializing View Binding
+        // setup the view binding and edge-to-edge
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        // Adjusting layout for system bars (status bar, navigation bar)
+        // handle the status/nav bar spacing
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Initialize Firebase
         firebaseDatabase = FirebaseDatabase.getInstance();
 
-        // Setup Toolbar
+        // simple toolbar setup
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        // Setup RecyclerView
+        // recycler view for the chat list
         usersAdapter = new UsersAdapter(displayedList, this);
         binding.userRecyclerView.setAdapter(usersAdapter);
         binding.userRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Load cached history
-        userList = preferenceManager.getChatHistory();
+        // start with cached history for speed
+        userList.addAll(preferenceManager.getChatHistory());
         displayedList.clear();
         displayedList.addAll(userList);
         usersAdapter.notifyDataSetChanged();
         updateEmptyState();
 
-        // Setup Search with Debouncing
-        binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
+        // handle searching with a small delay so it doesn't lag
+        binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 searchHandler.removeCallbacks(searchRunnable);
@@ -98,33 +104,46 @@ public class MainActivity extends BaseActivity {
             public boolean onQueryTextChange(String newText) {
                 searchHandler.removeCallbacks(searchRunnable);
                 searchRunnable = () -> searchUsers(newText);
-                searchHandler.postDelayed(searchRunnable, 300); // 300ms delay
+                searchHandler.postDelayed(searchRunnable, 300);
                 return true;
             }
         });
 
-        // Fetch users from Firebase Realtime Database
+        // load all the real-time data
         fetchBlockedLists();
         fetchUsers();
 
-        // Request Notification Permission for Android 13+
+        // ask for notification permission on new android versions
         requestNotificationPermission();
 
-        // Setup SwipeRefreshLayout
+        // pull to refresh logic
         binding.swipeRefreshLayout.setOnRefreshListener(() -> {
             fetchBlockedLists();
             fetchUsers();
-            // Stop refreshing after a short delay to give visual feedback
             new Handler().postDelayed(() -> binding.swipeRefreshLayout.setRefreshing(false), 1000);
         });
 
-        // Start Notification Service if not running
-        Intent serviceIntent = new Intent(this, MessageNotificationService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
+        // get the FCM token so we can send push notifications later
+        initFcmToken();
+    }
+
+    private void initFcmToken() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w("MainActivity", "Couldn't get FCM token", task.getException());
+                        return;
+                    }
+
+                    String token = task.getResult();
+                    if (token != null) {
+                        firebaseDatabase.getReference()
+                                .child("UserProfiles").child(uid).child("fcmToken").setValue(token);
+                    }
+                });
     }
 
     private void requestNotificationPermission() {
@@ -139,7 +158,7 @@ public class MainActivity extends BaseActivity {
         String currentUid = FirebaseAuth.getInstance().getUid();
         if (currentUid == null) return;
 
-        // Listen for people I blocked
+        // check who I've blocked
         firebaseDatabase.getReference().child("BlockedUsers").child(currentUid)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
@@ -154,7 +173,7 @@ public class MainActivity extends BaseActivity {
                     public void onCancelled(@NonNull DatabaseError error) {}
                 });
 
-        // Listen for people who blocked me
+        // check who has blocked me
         firebaseDatabase.getReference().child("BlockedBy").child(currentUid)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
@@ -190,7 +209,6 @@ public class MainActivity extends BaseActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        // Check if query hasn't changed while we were fetching
                         if (!query.equals(binding.searchView.getQuery().toString())) {
                             return;
                         }
@@ -203,22 +221,13 @@ public class MainActivity extends BaseActivity {
                                     String userId = ds.getKey();
                                     user.setUserId(userId);
                                     
-                                    // Don't show current logged-in user
-                                    if (userId != null && userId.equals(currentUid)) {
-                                        continue;
-                                    }
-
-                                    // Filter out blocked users
-                                    if (blockedUsersList.contains(userId) || blockedByList.contains(userId)) {
-                                        continue;
-                                    }
+                                    if (userId != null && userId.equals(currentUid)) continue;
+                                    if (blockedUsersList.contains(userId) || blockedByList.contains(userId)) continue;
 
                                     String name = user.getUserName() != null ? user.getUserName().toLowerCase() : "";
                                     String customId = user.getCustomId() != null ? user.getCustomId().toLowerCase() : "";
                                     
-                                    // Search by name or custom ID as requested
                                     if (name.contains(lowerCaseQuery) || customId.contains(lowerCaseQuery)) {
-                                        // Check if this user is in our active chats to get read status
                                         for (Users activeUser : userList) {
                                             if (activeUser.getUserId().equals(userId)) {
                                                 user.setRead(activeUser.isRead());
@@ -229,14 +238,10 @@ public class MainActivity extends BaseActivity {
                                         results.add(user);
                                     }
                                 }
-                            } catch (Exception e) {
-                                // Skip malformed data
-                            }
+                            } catch (Exception ignored) {}
                         }
                         
-                        // Update UI on main thread
                         runOnUiThread(() -> {
-                            // Verify query again before updating list
                             if (query.equals(binding.searchView.getQuery().toString())) {
                                 displayedList.clear();
                                 displayedList.addAll(results);
@@ -257,15 +262,14 @@ public class MainActivity extends BaseActivity {
         String currentUid = FirebaseAuth.getInstance().getUid();
         if (currentUid == null) return;
 
-        // Listen for active chats for the current user
+        // get all the chats this user is part of
         firebaseDatabase.getReference().child("UserChats").child(currentUid)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        java.util.HashSet<String> currentChatIds = new java.util.HashSet<>();
+                        HashSet<String> currentChatIds = new HashSet<>();
                         
                         if (!snapshot.exists()) {
-                            // No active chats, clear everything
                             clearStaleListeners(currentChatIds);
                             userList.clear();
                             updateDisplayList();
@@ -278,7 +282,7 @@ public class MainActivity extends BaseActivity {
                             
                             currentChatIds.add(otherUserId);
                             
-                            // Only add a listener if we don't already have one for this user
+                            // only add a listener if we don't have one for this person yet
                             if (!profileListeners.containsKey(otherUserId)) {
                                 ValueEventListener listener = new ValueEventListener() {
                                     @Override
@@ -287,14 +291,13 @@ public class MainActivity extends BaseActivity {
                                         if (user != null) {
                                             user.setUserId(userSnapshot.getKey());
                                             
-                                            // Filter out blocked users
                                             if (blockedUsersList.contains(user.getUserId()) || blockedByList.contains(user.getUserId())) {
                                                 removeFromUserList(user.getUserId());
                                                 updateDisplayList();
                                                 return;
                                             }
                                             
-                                            // Get latest chat info
+                                            // get the latest message and read status
                                             firebaseDatabase.getReference().child("UserChats").child(currentUid).child(otherUserId)
                                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                                         @Override
@@ -312,7 +315,7 @@ public class MainActivity extends BaseActivity {
                                                                 user.setRead(isRead != null ? isRead : true);
                                                             }
 
-                                                            // Fetch Mute Status
+                                                            // get their mute settings
                                                             firebaseDatabase.getReference().child("UserProfiles").child(currentUid)
                                                                     .child("MutedUsers").child(otherUserId)
                                                                     .addValueEventListener(new ValueEventListener() {
@@ -320,11 +323,7 @@ public class MainActivity extends BaseActivity {
                                                                         public void onDataChange(@NonNull DataSnapshot muteSnapshot) {
                                                                             boolean isMuted = muteSnapshot.exists() && Boolean.TRUE.equals(muteSnapshot.getValue(Boolean.class));
                                                                             user.setMuted(isMuted);
-                                                                            
-                                                                            // Force refresh the list item
-                                                                            runOnUiThread(() -> {
-                                                                                updateUserInList(user);
-                                                                            });
+                                                                            runOnUiThread(() -> updateUserInList(user));
                                                                         }
 
                                                                         @Override
@@ -347,27 +346,24 @@ public class MainActivity extends BaseActivity {
                             }
                         }
                         
-                        // Cleanup listeners and users for chats that were removed
                         clearStaleListeners(currentChatIds);
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(MainActivity.this, "Failed to load chats: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Failed to load chats", Toast.LENGTH_SHORT).show();
                         updateEmptyState();
                     }
                 });
     }
 
-    private void clearStaleListeners(java.util.HashSet<String> currentChatIds) {
-        java.util.Iterator<java.util.Map.Entry<String, ValueEventListener>> it = profileListeners.entrySet().iterator();
+    private void clearStaleListeners(HashSet<String> currentChatIds) {
+        Iterator<Map.Entry<String, ValueEventListener>> it = profileListeners.entrySet().iterator();
         while (it.hasNext()) {
-            java.util.Map.Entry<String, ValueEventListener> entry = it.next();
+            Map.Entry<String, ValueEventListener> entry = it.next();
             if (!currentChatIds.contains(entry.getKey())) {
                 firebaseDatabase.getReference().child("UserProfiles").child(entry.getKey()).removeEventListener(entry.getValue());
                 it.remove();
-                
-                // Also remove from userList
                 removeFromUserList(entry.getKey());
             }
         }
@@ -376,12 +372,10 @@ public class MainActivity extends BaseActivity {
 
     private void removeFromUserList(String userId) {
         if (userId == null) return;
-        java.util.Iterator<Users> it = userList.iterator();
+        Iterator<Users> it = userList.iterator();
         while (it.hasNext()) {
             Users u = it.next();
-            if (userId.equals(u.getUserId())) {
-                it.remove();
-            }
+            if (userId.equals(u.getUserId())) it.remove();
         }
     }
 
@@ -394,14 +388,11 @@ public class MainActivity extends BaseActivity {
             }
         }
         
-        if (index != -1) {
-            userList.set(index, user);
-        } else {
-            userList.add(user);
-        }
+        if (index != -1) userList.set(index, user);
+        else userList.add(user);
 
-        java.util.Collections.sort(userList, (u1, u2) -> 
-                Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
+        // keep the most recent chats at the top
+        Collections.sort(userList, (u1, u2) -> Long.compare(u2.getLastMessageTime(), u1.getLastMessageTime()));
         
         preferenceManager.saveChatHistory(userList);
         updateDisplayList();
@@ -437,8 +428,8 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Remove all profile listeners to prevent memory leaks
-        for (java.util.Map.Entry<String, ValueEventListener> entry : profileListeners.entrySet()) {
+        // clean up listeners so we don't leak memory
+        for (Map.Entry<String, ValueEventListener> entry : profileListeners.entrySet()) {
             firebaseDatabase.getReference().child("UserProfiles").child(entry.getKey()).removeEventListener(entry.getValue());
         }
         profileListeners.clear();
@@ -446,8 +437,7 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -469,14 +459,12 @@ public class MainActivity extends BaseActivity {
                             Intent shareIntent = new Intent(Intent.ACTION_SEND);
                             shareIntent.setType("text/plain");
                             shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Check out SmashChat!");
-                            shareIntent.putExtra(Intent.EXTRA_TEXT, "I'm loving SmashChat app! Download it from here: " + appLink);
+                            shareIntent.putExtra(Intent.EXTRA_TEXT, "I'm loving SmashChat! Download it here: " + appLink);
                             startActivity(Intent.createChooser(shareIntent, "Share via"));
                         } else {
-                            Toast.makeText(this, "App link not found in database.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Can't find app link", Toast.LENGTH_SHORT).show();
                         }
-                    }).addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to retrieve app link: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    }).addOnFailureListener(e -> Toast.makeText(this, "Failed to get link", Toast.LENGTH_SHORT).show());
             return true;
         }
         

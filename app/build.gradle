@@ -51,6 +51,7 @@ android {
         implementation libs.google.firebase.auth
         implementation libs.firebase.database
         implementation libs.firebase.firestore
+        implementation libs.firebase.messaging
         implementation libs.firebase.storage
         implementation libs.google.firebase.analytics
 
@@ -79,5 +80,6 @@ dependencies {
     implementation libs.activity.ktx
     implementation libs.appcompat
     implementation libs.constraintlayout
+    implementation libs.google.firebase.messaging
     implementation libs.material
 }

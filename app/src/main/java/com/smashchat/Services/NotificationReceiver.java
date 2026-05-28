@@ -5,27 +5,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.core.app.RemoteInput;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Utils.AESalgorithm;
 
 import java.util.Date;
 import java.util.HashMap;
 
-/**
- * NotificationReceiver handles background actions from notifications
- * like "Mark as Read" and inline "Reply".
- */
 public class NotificationReceiver extends BroadcastReceiver {
 
-    private static final String TAG = "NotificationReceiver";
     public static final String ACTION_MARK_AS_READ = "com.smashchat.ACTION_MARK_AS_READ";
     public static final String ACTION_REPLY = "com.smashchat.ACTION_REPLY";
     public static final String EXTRA_SENDER_ID = "sender_id";
@@ -39,72 +30,70 @@ public class NotificationReceiver extends BroadcastReceiver {
         if (myUid == null || senderId == null) return;
 
         if (ACTION_MARK_AS_READ.equals(action)) {
-            markAsRead(senderId, myUid);
-            cancelNotification(context, senderId);
+            // just mark it as read in firebase and dismiss the notification
+            markChatAsRead(senderId, myUid);
+            dismissNotification(context, senderId);
         } else if (ACTION_REPLY.equals(action)) {
-            handleReply(context, intent, senderId, myUid);
+            // handle the quick reply from the notification tray
+            handleQuickReply(context, intent, senderId, myUid);
         }
     }
 
-    private void markAsRead(String senderId, String myUid) {
+    private void markChatAsRead(String senderId, String myUid) {
         FirebaseDatabase.getInstance().getReference()
                 .child("UserChats").child(myUid).child(senderId)
-                .child("read").setValue(true)
-                .addOnSuccessListener(unused -> Log.d(TAG, "Marked as read: " + senderId));
+                .child("read").setValue(true);
     }
 
-    private void handleReply(Context context, Intent intent, String senderId, String myUid) {
-        Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
-        if (remoteInput != null) {
-            CharSequence replyText = remoteInput.getCharSequence(MessageNotificationService.KEY_TEXT_REPLY);
-            if (replyText != null) {
-                sendMessage(senderId, myUid, replyText.toString());
-                // After replying, the notification should ideally be updated or cleared.
-                // For a professional feel, we'll mark the existing thread as read and cancel.
-                markAsRead(senderId, myUid);
-                cancelNotification(context, senderId);
+    private void handleQuickReply(Context context, Intent intent, String senderId, String myUid) {
+        Bundle results = RemoteInput.getResultsFromIntent(intent);
+        if (results != null) {
+            CharSequence reply = results.getCharSequence(MyFirebaseMessagingService.KEY_TEXT_REPLY);
+            if (reply != null) {
+                sendTheMessage(senderId, myUid, reply.toString());
+                // clear the notification once we reply
+                markChatAsRead(senderId, myUid);
+                dismissNotification(context, senderId);
             }
         }
     }
 
-    private void sendMessage(String receiverId, String senderId, String message) {
-        long currentTimestamp = new Date().getTime();
-        String sharedSecretKey = (senderId.compareTo(receiverId) < 0) ? (senderId + receiverId) : (receiverId + senderId);
+    private void sendTheMessage(String receiverId, String senderId, String text) {
+        long now = new Date().getTime();
+        String key = (senderId.compareTo(receiverId) < 0) ? (senderId + receiverId) : (receiverId + senderId);
         
-        String encryptedMessage = AESalgorithm.encrypt(message, sharedSecretKey);
+        String encrypted = AESalgorithm.encrypt(text, key);
         
-        HashMap<String, Object> messageMap = new HashMap<>();
-        messageMap.put("uId", senderId);
-        messageMap.put("message", encryptedMessage);
-        messageMap.put("timestamp", currentTimestamp);
-        messageMap.put("type", 0);
+        HashMap<String, Object> msg = new HashMap<>();
+        msg.put("uId", senderId);
+        msg.put("message", encrypted);
+        msg.put("timestamp", now);
+        msg.put("type", 0);
 
-        String senderRoom = senderId + receiverId;
-        String receiverRoom = receiverId + senderId;
+        String room1 = senderId + receiverId;
+        String room2 = receiverId + senderId;
 
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        database.getReference().child("Messages").child(senderRoom).push().setValue(messageMap)
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        db.getReference().child("Messages").child(room1).push().setValue(msg)
                 .addOnSuccessListener(unused -> {
-                    database.getReference().child("Messages").child(receiverRoom).push().setValue(messageMap)
+                    db.getReference().child("Messages").child(room2).push().setValue(msg)
                             .addOnSuccessListener(unused1 -> {
-                                updateLastChatInfo(senderId, receiverId, currentTimestamp, encryptedMessage, true);
-                                updateLastChatInfo(receiverId, senderId, currentTimestamp, encryptedMessage, false);
+                                updateLastMsgInfo(senderId, receiverId, now, encrypted, true);
+                                updateLastMsgInfo(receiverId, senderId, now, encrypted, false);
                             });
                 });
     }
 
-    private void updateLastChatInfo(String uid, String otherId, long timestamp, String encryptedLastMsg, boolean read) {
+    private void updateLastMsgInfo(String uid, String otherId, long time, String lastMsg, boolean read) {
         HashMap<String, Object> map = new HashMap<>();
-        map.put("timestamp", timestamp);
-        map.put("lastMessage", encryptedLastMsg);
+        map.put("timestamp", time);
+        map.put("lastMessage", lastMsg);
         map.put("read", read);
         FirebaseDatabase.getInstance().getReference().child("UserChats").child(uid).child(otherId).updateChildren(map);
     }
 
-    private void cancelNotification(Context context, String senderId) {
-        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.cancel(senderId.hashCode());
-        }
+    private void dismissNotification(Context context, String senderId) {
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.cancel(senderId.hashCode());
     }
 }

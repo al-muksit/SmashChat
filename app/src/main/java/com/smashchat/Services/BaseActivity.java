@@ -13,27 +13,23 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.smashchat.Utils.PreferenceManager;
 
-/**
- * BaseActivity provides common functionality for all activities,
- * specifically handling the real-time active status tracking.
- */
 public class BaseActivity extends AppCompatActivity {
 
-    private static int activityCount = 0;
+    private static int activeActivities = 0;
     public static boolean isAppInForeground = false;
     public static String currentChatUserId = null;
 
     protected PreferenceManager preferenceManager;
-    private static final Handler statusHandler = new Handler(Looper.getMainLooper());
-    private static Runnable offlineRunnable;
+    private static final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private static Runnable goOfflineTask;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         preferenceManager = new PreferenceManager(this);
 
-        // Apply theme globally before super.onCreate and setContentView
-        int currentTheme = preferenceManager.getDarkModeTheme();
-        switch (currentTheme) {
+        // set the theme based on user settings before showing anything
+        int theme = preferenceManager.getDarkModeTheme();
+        switch (theme) {
             case PreferenceManager.THEME_OFF:
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                 break;
@@ -47,7 +43,7 @@ public class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
     }
 
-    private void updateStatus(String status) {
+    private void updateOnlineStatus(String status) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
             DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference()
@@ -56,15 +52,14 @@ public class BaseActivity extends AppCompatActivity {
                     .child("status");
 
             if ("Active".equals(status)) {
+                // only show as active if they have it enabled in settings
                 if (preferenceManager.isActiveStatusEnabled()) {
                     statusRef.setValue("Active");
                     statusRef.onDisconnect().setValue("Offline");
                 } else {
-                    // If status is disabled, force it to show as Offline
                     statusRef.setValue("Offline");
                 }
             } else {
-                // Always allow updating to "Offline" to ensure accuracy when leaving.
                 statusRef.setValue("Offline");
             }
         }
@@ -73,15 +68,15 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        activityCount++;
+        activeActivities++;
         isAppInForeground = true;
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        activityCount--;
-        if (activityCount == 0) {
+        activeActivities--;
+        if (activeActivities == 0) {
             isAppInForeground = false;
         }
     }
@@ -89,20 +84,19 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Cancel any pending offline update since the user is still in the app
-        if (offlineRunnable != null) {
-            statusHandler.removeCallbacks(offlineRunnable);
-            offlineRunnable = null;
+        // cancel the offline timer since we are back
+        if (goOfflineTask != null) {
+            uiHandler.removeCallbacks(goOfflineTask);
+            goOfflineTask = null;
         }
-        updateStatus("Active");
+        updateOnlineStatus("Active");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Schedule an offline update with a slight delay (2 seconds)
-        // This prevents the user from appearing "Offline" during activity transitions
-        offlineRunnable = () -> updateStatus("Offline");
-        statusHandler.postDelayed(offlineRunnable, 2000);
+        // wait 2 seconds before going offline to handle activity transitions smoothly
+        goOfflineTask = () -> updateOnlineStatus("Offline");
+        uiHandler.postDelayed(goOfflineTask, 2000);
     }
 }
