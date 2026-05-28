@@ -2,7 +2,6 @@ package com.smashchat.AccountDetails;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -15,118 +14,79 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.smashchat.Services.BaseActivity;
 import com.smashchat.MainActivity;
-import com.smashchat.Services.MessageNotificationService;
 import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivitySigninBinding;
 
 import java.util.Objects;
 
-/**
- * SigninActivity handles the user login process.
- * It checks if a user is already logged in and redirects to MainActivity.
- */
 public class SigninActivity extends BaseActivity {
 
-    private FirebaseAuth firebaseAuth;
+    private FirebaseAuth auth;
     private ActivitySigninBinding binding;
-    private ProgressDialog progressDialog;
+    private ProgressDialog loadingBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initializing View Binding
         binding = ActivitySigninBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        // Handling Window Insets for Edge-to-Edge display
+        // make it look good on screens with cutouts/notches
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-            
-            // Apply top and side padding from system bars
-            // We use the maximum of systemBars.bottom and ime.bottom to ensure 
-            // the layout moves up for both the navigation bar and the keyboard.
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
-
+            Insets keyboard = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, keyboard.bottom));
             return insets;
         });
 
-        // Initializing Firebase
-        firebaseAuth = FirebaseAuth.getInstance();
+        auth = FirebaseAuth.getInstance();
 
-        // Initializing ProgressDialog (Legacy approach)
-        progressDialog = new ProgressDialog(SigninActivity.this);
-        progressDialog.setTitle("Login");
-        progressDialog.setMessage("Logging into your account. Please wait...");
+        loadingBar = new ProgressDialog(this);
+        loadingBar.setTitle("Login");
+        loadingBar.setMessage("Signing you in, please wait...");
 
-        // Set up Sign In button click listener
         binding.signin.setOnClickListener(v -> {
-            String emailStr = binding.email.getText().toString().trim();
-            String passStr = binding.password.getText().toString().trim();
+            String email = binding.email.getText().toString().trim();
+            String pass = binding.password.getText().toString().trim();
 
-            if (emailStr.isEmpty() || passStr.isEmpty()) {
-                Toast.makeText(SigninActivity.this, "Please enter email and password", Toast.LENGTH_SHORT).show();
+            if (email.isEmpty() || pass.isEmpty()) {
+                Toast.makeText(this, "Type in your email and password", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            progressDialog.show();
+            loadingBar.show();
             
-            // Hash password with email as salt before signing in
-            String hashedPassword = HashAlgorithm.hashPassword(passStr, emailStr);
+            // hash the password before sending to firebase
+            String hashed = HashAlgorithm.hashPassword(pass, email);
             
-            // Sign in with Firebase Auth using hashed password
-            firebaseAuth.signInWithEmailAndPassword(emailStr, hashedPassword)
+            auth.signInWithEmailAndPassword(email, hashed)
                     .addOnCompleteListener(task -> {
-                        progressDialog.dismiss();
+                        loadingBar.dismiss();
                         if (task.isSuccessful()) {
-                            Toast.makeText(SigninActivity.this, "Logged in Successfully", Toast.LENGTH_SHORT).show();
-                            // Start Notification Service
-                            Intent serviceIntent = new Intent(SigninActivity.this, MessageNotificationService.class);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                startForegroundService(serviceIntent);
-                            } else {
-                                startService(serviceIntent);
-                            }
-                            // Navigate to MainActivity
-                            Intent intent = new Intent(SigninActivity.this, MainActivity.class);
-                            startActivity(intent);
+                            Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(this, MainActivity.class));
                             finish();
                         } else {
-                            // Display error message
-                            Toast.makeText(SigninActivity.this, 
-                                    Objects.requireNonNull(task.getException()).getMessage(), 
-                                    Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
         });
 
-        // Navigate to Signup activity
         binding.registerLink.setOnClickListener(v -> {
-            Intent intent = new Intent(SigninActivity.this, SignupActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, SignupActivity.class));
         });
 
-        // Check if user is already logged in
-        if (firebaseAuth.getCurrentUser() != null) {
-            // Start Notification Service
-            Intent serviceIntent = new Intent(SigninActivity.this, MessageNotificationService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-            Intent intent = new Intent(SigninActivity.this, MainActivity.class);
-            startActivity(intent);
+        // go straight to home if already logged in
+        if (auth.getCurrentUser() != null) {
+            startActivity(new Intent(this, MainActivity.class));
             finish();
         }
     }
 
-    /**
-     * Legacy method for XML onClick. Prefer using ViewBinding listeners.
-     */
+    // old school way for buttons in xml
     public void register(View view) {
-        startActivity(new Intent(getApplicationContext(), SignupActivity.class));
+        startActivity(new Intent(this, SignupActivity.class));
     }
 }
