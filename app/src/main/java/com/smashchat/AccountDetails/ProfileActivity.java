@@ -4,12 +4,15 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -53,9 +56,15 @@ public class ProfileActivity extends BaseActivity {
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
             return insets;
         });
 
@@ -86,15 +95,44 @@ public class ProfileActivity extends BaseActivity {
         binding.profileImage.setOnClickListener(v -> galleryLauncher.launch("image/*"));
 
         binding.btnSave.setOnClickListener(v -> validateAndUpdate());
+    }
 
-        binding.btnLogout.setOnClickListener(v -> {
-            firebaseAuth.signOut();
-            preferenceManager.clear();
-            databaseHelper.clear();
-            Intent intent = new Intent(ProfileActivity.this, SigninActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-        });
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.profile_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.menu_logout) {
+            showLogoutConfirmationDialog();
+            return true;
+        } else if (id == R.id.menu_change_email) {
+            // Future implementation
+            return true;
+        } else if (id == R.id.menu_reset_password) {
+            // Future implementation
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Logout")
+                .setMessage("Are you sure want to logout this account?")
+                .setPositiveButton("Confirm", (dialog, which) -> {
+                    firebaseAuth.signOut();
+                    preferenceManager.clear();
+                    databaseHelper.clear();
+                    Intent intent = new Intent(ProfileActivity.this, SigninActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void loadUserData() {
