@@ -1,15 +1,22 @@
 package com.smashchat;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -54,6 +61,11 @@ public class MainActivity extends BaseActivity {
     private UsersAdapter usersAdapter;
     private final Handler searchHandler = new Handler();
     private Runnable searchRunnable;
+
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+    private final Handler connectivityHandler = new Handler(Looper.getMainLooper());
+    private boolean isFirstConnectivityChange = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +137,83 @@ public class MainActivity extends BaseActivity {
 
         // get the FCM token so we can send push notifications later
         initFcmToken();
+
+        setupConnectivityMonitor();
+    }
+
+    private void setupConnectivityMonitor() {
+        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        
+        // Check initial state
+        Network activeNetwork = connectivityManager.getActiveNetwork();
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+        boolean hasInternet = capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        
+        if (!hasInternet) {
+            updateConnectivityStatus(false);
+            isFirstConnectivityChange = false;
+        }
+
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                super.onAvailable(network);
+                runOnUiThread(() -> {
+                    if (!isFirstConnectivityChange) {
+                        updateConnectivityStatus(true);
+                    }
+                    isFirstConnectivityChange = false;
+                });
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                super.onLost(network);
+                runOnUiThread(() -> {
+                    updateConnectivityStatus(false);
+                    isFirstConnectivityChange = false;
+                });
+            }
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capabilities) {
+                super.onCapabilitiesChanged(network, capabilities);
+                boolean hasInternetCapability = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                runOnUiThread(() -> {
+                    if (!hasInternetCapability) {
+                        updateConnectivityStatus(false);
+                    }
+                });
+            }
+        };
+
+        NetworkRequest networkRequest = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build();
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+    }
+
+    private void updateConnectivityStatus(boolean isConnected) {
+        boolean isDarkMode = (getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) 
+                == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+
+        if (isConnected) {
+            binding.connectivityStatusLayout.setVisibility(View.VISIBLE);
+            int greenColor = ContextCompat.getColor(this, isDarkMode ? R.color.green_night : R.color.green);
+            binding.connectivityStatusLayout.setBackgroundColor(greenColor);
+            binding.connectivityIcon.setImageResource(R.drawable.outline_cloud_done_24);
+            binding.connectivityText.setText("Internet restored");
+
+            connectivityHandler.removeCallbacksAndMessages(null);
+            connectivityHandler.postDelayed(() -> binding.connectivityStatusLayout.setVisibility(View.GONE), 3000);
+        } else {
+            connectivityHandler.removeCallbacksAndMessages(null);
+            binding.connectivityStatusLayout.setVisibility(View.VISIBLE);
+            int redColor = ContextCompat.getColor(this, isDarkMode ? R.color.red_night : R.color.red);
+            binding.connectivityStatusLayout.setBackgroundColor(redColor);
+            binding.connectivityIcon.setImageResource(R.drawable.outline_cloud_off_24);
+            binding.connectivityText.setText("No internet connection");
+        }
     }
 
     private void initFcmToken() {
@@ -428,6 +517,9 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (connectivityManager != null && networkCallback != null) {
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        }
         // clean up listeners so we don't leak memory
         for (Map.Entry<String, ValueEventListener> entry : profileListeners.entrySet()) {
             firebaseDatabase.getReference().child("UserProfiles").child(entry.getKey()).removeEventListener(entry.getValue());
