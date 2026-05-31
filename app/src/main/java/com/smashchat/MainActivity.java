@@ -144,12 +144,8 @@ public class MainActivity extends BaseActivity {
     private void setupConnectivityMonitor() {
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         
-        // Check initial state
-        Network activeNetwork = connectivityManager.getActiveNetwork();
-        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-        boolean hasInternet = capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-        
-        if (!hasInternet) {
+        // Initial state check
+        if (!isNetworkAvailable()) {
             updateConnectivityStatus(false);
             isFirstConnectivityChange = false;
         }
@@ -157,7 +153,6 @@ public class MainActivity extends BaseActivity {
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
-                super.onAvailable(network);
                 runOnUiThread(() -> {
                     if (!isFirstConnectivityChange) {
                         updateConnectivityStatus(true);
@@ -168,29 +163,32 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public void onLost(@NonNull Network network) {
-                super.onLost(network);
                 runOnUiThread(() -> {
-                    updateConnectivityStatus(false);
-                    isFirstConnectivityChange = false;
-                });
-            }
-
-            @Override
-            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capabilities) {
-                super.onCapabilitiesChanged(network, capabilities);
-                boolean hasInternetCapability = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-                runOnUiThread(() -> {
-                    if (!hasInternetCapability) {
+                    // Double check if we really lost internet (e.g. if switching from WiFi to Mobile)
+                    if (!isNetworkAvailable()) {
                         updateConnectivityStatus(false);
+                        isFirstConnectivityChange = false;
                     }
                 });
             }
         };
 
-        NetworkRequest networkRequest = new NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .build();
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+        } else {
+            NetworkRequest networkRequest = new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+            connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+        }
+    }
+
+    private boolean isNetworkAvailable() {
+        if (connectivityManager == null) return false;
+        Network activeNetwork = connectivityManager.getActiveNetwork();
+        if (activeNetwork == null) return false;
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+        return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     }
 
     private void updateConnectivityStatus(boolean isConnected) {
