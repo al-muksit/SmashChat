@@ -22,16 +22,24 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseUser;
 import com.smashchat.Services.BaseActivity;
 import com.smashchat.Models.Users;
 import com.smashchat.R;
 import com.smashchat.Services.ImgBBService;
 import com.smashchat.Utils.DatabaseHelper;
+import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivityProfileBinding;
 import com.squareup.picasso.Picasso;
 
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * ProfileActivity allows users to view and edit their profile information independently.
@@ -113,10 +121,78 @@ public class ProfileActivity extends BaseActivity {
             // Future implementation
             return true;
         } else if (id == R.id.menu_reset_password) {
-            // Future implementation
+            showChangePasswordDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showChangePasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_change_password, null);
+        builder.setView(dialogView);
+
+        EditText etCurrentPassword = dialogView.findViewById(R.id.etCurrentPassword);
+        EditText etNewPassword = dialogView.findViewById(R.id.etNewPassword);
+        MaterialButton btnChange = dialogView.findViewById(R.id.btnChangePassword);
+
+        AlertDialog dialog = builder.create();
+
+        btnChange.setOnClickListener(v -> {
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            String newPassword = etNewPassword.getText().toString().trim();
+
+            if (currentPassword.isEmpty() || newPassword.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null && user.getEmail() != null) {
+                progressDialog.setMessage("Changing password...");
+                progressDialog.show();
+
+                String email = user.getEmail();
+                String hashedCurrent = HashAlgorithm.hashPassword(currentPassword, email);
+                String hashedNew = HashAlgorithm.hashPassword(newPassword, email);
+
+                // Re-authenticate user
+                user.reauthenticate(EmailAuthProvider.getCredential(email, hashedCurrent))
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                user.updatePassword(hashedNew).addOnCompleteListener(updateTask -> {
+                                    progressDialog.dismiss();
+                                    if (updateTask.isSuccessful()) {
+                                        dialog.dismiss();
+                                        Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
+                                        showPasswordChangedSuccessDialog();
+                                    } else {
+                                        Toast.makeText(this, "Error: " + Objects.requireNonNull(updateTask.getException()).getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                progressDialog.dismiss();
+                                Toast.makeText(this, "Authentication failed: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void showPasswordChangedSuccessDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Password Changed")
+                .setMessage("Your password has been changed successfully.")
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .setCancelable(false)
+                .show();
     }
 
     private void showLogoutConfirmationDialog() {
