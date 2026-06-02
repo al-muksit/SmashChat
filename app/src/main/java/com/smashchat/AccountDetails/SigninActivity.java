@@ -78,6 +78,10 @@ public class SigninActivity extends BaseActivity {
             startActivity(new Intent(this, SignupActivity.class));
         });
 
+        binding.forgotPassword.setOnClickListener(v -> {
+            startActivity(new Intent(this, ForgotPasswordActivity.class));
+        });
+
         // go straight to home if already logged in
         if (auth.getCurrentUser() != null) {
             startActivity(new Intent(this, MainActivity.class));
