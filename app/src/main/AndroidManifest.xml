@@ -44,6 +44,7 @@
             android:label="Profile"
             android:parentActivityName=".MainActivity" />
         <activity android:name=".AccountDetails.SignupActivity" />
+        <activity android:name=".AccountDetails.ForgotPasswordActivity" />
         <activity android:name=".MainActivity" />
         <activity
             android:name=".AccountDetails.SigninActivity"
