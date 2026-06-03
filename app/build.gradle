@@ -58,6 +58,8 @@ android {
         implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
         implementation("com.google.firebase:firebase-analytics")
 
+        implementation 'com.github.mukeshsolanki.android-otpview-pinview:otpview:3.1.0'
+
         // UI Components
         implementation libs.circleimageview
         implementation libs.picasso
