@@ -16,6 +16,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Services.BaseActivity;
+import com.smashchat.Utils.EmailService;
+import com.smashchat.Utils.EmailValidator;
 import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivityForgotPasswordBinding;
 
@@ -47,21 +49,25 @@ public class ForgotPasswordActivity extends BaseActivity {
 
         binding.sendCodeBtn.setOnClickListener(v -> {
             userEmail = binding.emailInput.getText().toString().trim();
-            if (userEmail.isEmpty()) {
-                Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            checkEmailAndSendCode(userEmail);
+            EmailValidator.validateEmail(userEmail, (isValid, message) -> {
+                if (isValid) {
+                    checkEmailAndSendCode(userEmail);
+                } else {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         binding.verifyBtn.setOnClickListener(v -> {
-            String enteredCode = binding.codeInput.getText().toString().trim();
-            if (enteredCode.isEmpty()) {
-                Toast.makeText(this, "Please enter the code", Toast.LENGTH_SHORT).show();
+            String enteredCode = binding.otpView.getText().toString().trim();
+            if (enteredCode.length() < 6) {
+                Toast.makeText(this, "Please enter the full 6-digit code", Toast.LENGTH_SHORT).show();
                 return;
             }
             verifyCode(enteredCode);
         });
+
+        binding.otpView.setOtpCompletionListener(this::verifyCode);
 
         binding.confirmChangeBtn.setOnClickListener(v -> {
             String newPassword = binding.newPasswordInput.getText().toString().trim();
@@ -92,25 +98,30 @@ public class ForgotPasswordActivity extends BaseActivity {
 
     private void generateAndSendCode(String email) {
         Random random = new Random();
-        generatedCode = String.format("%06d", random.nextInt(1000000));
+        String code = String.format("%06d", random.nextInt(1000000));
         
-        // Save code to database with timestamp
-        long expiryTime = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutes
-        database.getReference().child("VerificationCodes").child(email.replace(".", "_"))
-                .child("code").setValue(generatedCode);
-        database.getReference().child("VerificationCodes").child(email.replace(".", "_"))
-                .child("expiry").setValue(expiryTime);
+        Toast.makeText(this, "Sending code...", Toast.LENGTH_SHORT).show();
 
-        sendEmail(email, generatedCode); // Placeholder
-        
-        showStep2();
-        startTimer();
-    }
+        EmailService.sendVerificationEmail(email, code, new EmailService.EmailCallback() {
+            @Override
+            public void onSuccess() {
+                // Save code to database with timestamp
+                long expiryTime = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutes
+                database.getReference().child("VerificationCodes").child(email.replace(".", "_"))
+                        .child("code").setValue(code);
+                database.getReference().child("VerificationCodes").child(email.replace(".", "_"))
+                        .child("expiry").setValue(expiryTime);
 
-    private void sendEmail(String email, String code) {
-        // Placeholder for email sending service
-        Toast.makeText(this, "Verification code sent to " + email, Toast.LENGTH_LONG).show();
-        // In a real app, you would call a backend API or Firebase Function here
+                Toast.makeText(ForgotPasswordActivity.this, "Verification code sent to " + email, Toast.LENGTH_LONG).show();
+                showStep2();
+                startTimer();
+            }
+
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(ForgotPasswordActivity.this, "Failed to send code: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void startTimer() {

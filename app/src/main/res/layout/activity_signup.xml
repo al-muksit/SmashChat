@@ -38,61 +38,72 @@
                 android:textSize="30sp"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/username"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="30dp"
-                android:background="@drawable/auth_edittext_bg"
-                android:hint="Enter name"
-                android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
-
-            <EditText
-                android:id="@+id/userId"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="15dp"
-                android:background="@drawable/auth_edittext_bg"
-                android:hint="Enter Unique ID (e.g. user123)"
-                android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
-
-            <EditText
-                android:id="@+id/email"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="15dp"
-                android:background="@drawable/auth_edittext_bg"
-                android:hint="Enter email"
-                android:inputType="textEmailAddress"
-                android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
-
-            <EditText
-                android:id="@+id/password"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="15dp"
-                android:background="@drawable/auth_edittext_bg"
-                android:hint="Enter password"
-                android:inputType="textPassword"
-                android:paddingStart="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
-
-            <Button
-                android:id="@+id/signup"
+            <LinearLayout
+                android:id="@+id/signupForm"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="30dp"
-                android:backgroundTint="?attr/colorPrimary"
-                android:text="Sign UP"
-                android:textColor="#fff"
-                android:textStyle="bold" />
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/username"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="30dp"
+                    android:background="@drawable/auth_edittext_bg"
+                    android:hint="Enter name"
+                    android:paddingStart="20dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?android:attr/textColorHint" />
+
+                <EditText
+                    android:id="@+id/userId"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="15dp"
+                    android:background="@drawable/auth_edittext_bg"
+                    android:hint="Enter Unique ID (e.g. user123)"
+                    android:paddingStart="20dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?android:attr/textColorHint" />
+
+                <EditText
+                    android:id="@+id/email"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="15dp"
+                    android:background="@drawable/auth_edittext_bg"
+                    android:hint="Enter email"
+                    android:inputType="textEmailAddress"
+                    android:paddingStart="20dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?android:attr/textColorHint" />
+
+                <EditText
+                    android:id="@+id/password"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="15dp"
+                    android:background="@drawable/auth_edittext_bg"
+                    android:hint="Enter password"
+                    android:inputType="textPassword"
+                    android:paddingStart="20dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?android:attr/textColorHint" />
+
+                <Button
+                    android:id="@+id/signup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="30dp"
+                    android:backgroundTint="?attr/colorPrimary"
+                    android:text="Sign UP"
+                    android:textColor="#fff"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <include
+                android:id="@+id/otpContainer"
+                layout="@layout/layout_signup_otp" />
 
             <TextView
                 android:id="@+id/loginLink"
