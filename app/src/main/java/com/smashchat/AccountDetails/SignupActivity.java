@@ -19,7 +19,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Services.BaseActivity;
 import com.smashchat.Models.Users;
-import com.smashchat.Utils.EmailService;
+import com.smashchat.Services.EmailService;
 import com.smashchat.Utils.EmailValidator;
 import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivitySignupBinding;
@@ -71,7 +71,7 @@ public class SignupActivity extends BaseActivity {
         binding.signup.setOnClickListener(v -> {
             nameStr = binding.username.getText().toString().trim();
             customIdStr = binding.userId.getText().toString().trim();
-            emailStr = binding.email.getText().toString().trim();
+            emailStr = binding.email.getText().toString().trim().toLowerCase();
             passStr = binding.password.getText().toString().trim();
 
             if (nameStr.isEmpty() || customIdStr.isEmpty() || emailStr.isEmpty() || passStr.isEmpty()) {
@@ -134,6 +134,7 @@ public class SignupActivity extends BaseActivity {
                                         @Override
                                         public void onCancelled(@NonNull DatabaseError error) {
                                             progressDialog.dismiss();
+                                            Toast.makeText(SignupActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                         }
                                     });
                         }
@@ -142,6 +143,7 @@ public class SignupActivity extends BaseActivity {
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
                         progressDialog.dismiss();
+                        Toast.makeText(SignupActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -202,7 +204,9 @@ public class SignupActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(SignupActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 

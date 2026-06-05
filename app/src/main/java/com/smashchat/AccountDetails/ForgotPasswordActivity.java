@@ -16,7 +16,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.smashchat.Services.BaseActivity;
-import com.smashchat.Utils.EmailService;
+import com.smashchat.Services.EmailService;
 import com.smashchat.Utils.EmailValidator;
 import com.smashchat.Utils.HashAlgorithm;
 import com.smashchat.databinding.ActivityForgotPasswordBinding;
@@ -31,6 +31,7 @@ public class ForgotPasswordActivity extends BaseActivity {
     private String userEmail;
     private CountDownTimer countDownTimer;
     private boolean isTimerRunning = false;
+    private android.app.ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +39,10 @@ public class ForgotPasswordActivity extends BaseActivity {
         binding = ActivityForgotPasswordBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
+
+        progressDialog = new android.app.ProgressDialog(this);
+        progressDialog.setMessage("Please wait...");
+        progressDialog.setCancelable(false);
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -48,7 +53,7 @@ public class ForgotPasswordActivity extends BaseActivity {
         database = FirebaseDatabase.getInstance();
 
         binding.sendCodeBtn.setOnClickListener(v -> {
-            userEmail = binding.emailInput.getText().toString().trim();
+            userEmail = binding.emailInput.getText().toString().trim().toLowerCase();
             EmailValidator.validateEmail(userEmail, (isValid, message) -> {
                 if (isValid) {
                     checkEmailAndSendCode(userEmail);
@@ -80,19 +85,34 @@ public class ForgotPasswordActivity extends BaseActivity {
     }
 
     private void checkEmailAndSendCode(String email) {
-        database.getReference().child("UserProfiles").orderByChild("email").equalTo(email)
+        progressDialog.setMessage("Checking email...");
+        progressDialog.show();
+        database.getReference().child("UserProfiles")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (snapshot.exists()) {
+                        boolean found = false;
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            String dbEmail = ds.child("email").getValue(String.class);
+                            if (dbEmail != null && dbEmail.trim().equalsIgnoreCase(email.trim())) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (found) {
                             generateAndSendCode(email);
                         } else {
-                            Toast.makeText(ForgotPasswordActivity.this, "Email does not exist", Toast.LENGTH_SHORT).show();
+                            progressDialog.dismiss();
+                            Toast.makeText(ForgotPasswordActivity.this, "This email is not registered yet. Please sign up first.", Toast.LENGTH_LONG).show();
                         }
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        progressDialog.dismiss();
+                        Toast.makeText(ForgotPasswordActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 
@@ -100,11 +120,12 @@ public class ForgotPasswordActivity extends BaseActivity {
         Random random = new Random();
         String code = String.format("%06d", random.nextInt(1000000));
         
-        Toast.makeText(this, "Sending code...", Toast.LENGTH_SHORT).show();
+        progressDialog.setMessage("Sending verification code...");
 
         EmailService.sendVerificationEmail(email, code, new EmailService.EmailCallback() {
             @Override
             public void onSuccess() {
+                progressDialog.dismiss();
                 // Save code to database with timestamp
                 long expiryTime = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutes
                 database.getReference().child("VerificationCodes").child(email.replace(".", "_"))
@@ -119,6 +140,7 @@ public class ForgotPasswordActivity extends BaseActivity {
 
             @Override
             public void onFailure(String error) {
+                progressDialog.dismiss();
                 Toast.makeText(ForgotPasswordActivity.this, "Failed to send code: " + error, Toast.LENGTH_LONG).show();
             }
         });
@@ -174,7 +196,9 @@ public class ForgotPasswordActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(ForgotPasswordActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 
@@ -197,6 +221,8 @@ public class ForgotPasswordActivity extends BaseActivity {
     }
 
     private void resetPassword(String newPassword) {
+        progressDialog.setMessage("Updating password...");
+        progressDialog.show();
         // Hash the new password
         String hashedPassword = HashAlgorithm.hashPassword(newPassword, userEmail);
 
@@ -208,6 +234,7 @@ public class ForgotPasswordActivity extends BaseActivity {
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             ds.getRef().child("password").setValue(hashedPassword)
                                     .addOnCompleteListener(task -> {
+                                        progressDialog.dismiss();
                                         if (task.isSuccessful()) {
                                             Toast.makeText(ForgotPasswordActivity.this, "Password updated successfully", Toast.LENGTH_SHORT).show();
                                             finish(); // Go back to login
@@ -221,7 +248,10 @@ public class ForgotPasswordActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        progressDialog.dismiss();
+                        Toast.makeText(ForgotPasswordActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 
