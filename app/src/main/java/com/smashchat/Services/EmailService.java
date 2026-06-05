@@ -1,8 +1,7 @@
-package com.smashchat.Utils;
+package com.smashchat.Services;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -42,8 +41,9 @@ public class EmailService {
             json.put("user_id", PUBLIC_KEY);
 
             JSONObject templateParams = new JSONObject();
-            templateParams.put("to_email", toEmail);
-            templateParams.put("code", code);
+            templateParams.put("email", toEmail);
+            templateParams.put("passcode", code);
+            templateParams.put("time", "5 minutes");
             json.put("template_params", templateParams);
 
             RequestBody body = RequestBody.create(
