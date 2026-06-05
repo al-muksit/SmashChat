@@ -58,10 +58,10 @@ public class SigninActivity extends BaseActivity {
 
             loadingBar.show();
             
-            // hash the password before sending to firebase
-            String hashed = HashAlgorithm.hashPassword(pass, email);
+            // Revert Hashing: Signin now uses the RAW password 
+            // to match the newly updated Signup/Forgot/Profile logic.
             
-            auth.signInWithEmailAndPassword(email, hashed)
+            auth.signInWithEmailAndPassword(email, pass)
                     .addOnCompleteListener(task -> {
                         loadingBar.dismiss();
                         if (task.isSuccessful()) {

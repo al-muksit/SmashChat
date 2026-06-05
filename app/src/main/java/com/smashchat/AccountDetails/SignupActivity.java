@@ -212,14 +212,17 @@ public class SignupActivity extends BaseActivity {
 
     private void createNewUser() {
         progressDialog.show();
-        String hashedPassword = HashAlgorithm.hashPassword(passStr, emailStr);
+        // IMPORTANT: We do NOT hash the password here because SigninActivity 
+        // will hash it before calling Firebase Auth. We must save the RAW 
+        // password to the UserProfiles node to stay consistent.
+        
         final String finalCustomId = customIdStr.startsWith("@") ? customIdStr : "@" + customIdStr;
 
-        firebaseAuth.createUserWithEmailAndPassword(emailStr, hashedPassword)
+        firebaseAuth.createUserWithEmailAndPassword(emailStr, passStr)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
-                        saveUserToDatabase(id, nameStr, emailStr, hashedPassword, finalCustomId);
+                        saveUserToDatabase(id, nameStr, emailStr, passStr, finalCustomId);
                         firebaseDatabase.getReference().child("SignupCodes").child(emailStr.replace(".", "_")).removeValue();
                     } else {
                         progressDialog.dismiss();

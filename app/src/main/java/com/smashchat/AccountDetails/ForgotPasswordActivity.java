@@ -223,19 +223,21 @@ public class ForgotPasswordActivity extends BaseActivity {
     private void resetPassword(String newPassword) {
         progressDialog.setMessage("Updating password...");
         progressDialog.show();
-        // Hash the new password
-        String hashedPassword = HashAlgorithm.hashPassword(newPassword, userEmail);
-
+        
+        // IMPORTANT: We do NOT hash the password here because SigninActivity 
+        // will hash it during the next login. We save the RAW password 
+        // so that it matches the logic in Signup/Signin.
+        
         database.getReference().child("UserProfiles")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        boolean updated = false;
+                        boolean found = false;
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             String dbEmail = ds.child("email").getValue(String.class);
                             if (dbEmail != null && dbEmail.trim().equalsIgnoreCase(userEmail.trim())) {
-                                updated = true;
-                                ds.getRef().child("password").setValue(hashedPassword)
+                                found = true;
+                                ds.getRef().child("password").setValue(newPassword)
                                         .addOnCompleteListener(task -> {
                                             progressDialog.dismiss();
                                             if (task.isSuccessful()) {
@@ -249,7 +251,7 @@ public class ForgotPasswordActivity extends BaseActivity {
                             }
                         }
 
-                        if (!updated) {
+                        if (!found) {
                             progressDialog.dismiss();
                             Toast.makeText(ForgotPasswordActivity.this, "Error: User record lost. Please try again.", Toast.LENGTH_SHORT).show();
                         }
