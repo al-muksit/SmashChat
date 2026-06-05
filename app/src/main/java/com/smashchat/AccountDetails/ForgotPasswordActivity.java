@@ -226,23 +226,34 @@ public class ForgotPasswordActivity extends BaseActivity {
         // Hash the new password
         String hashedPassword = HashAlgorithm.hashPassword(newPassword, userEmail);
 
-        // Update in Database first
-        database.getReference().child("UserProfiles").orderByChild("email").equalTo(userEmail)
+        database.getReference().child("UserProfiles")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        boolean updated = false;
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            ds.getRef().child("password").setValue(hashedPassword)
-                                    .addOnCompleteListener(task -> {
-                                        progressDialog.dismiss();
-                                        if (task.isSuccessful()) {
-                                            Toast.makeText(ForgotPasswordActivity.this, "Password updated successfully", Toast.LENGTH_SHORT).show();
-                                            finish(); // Go back to login
-                                        } else {
-                                            Toast.makeText(ForgotPasswordActivity.this, "Failed to update password", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                            String dbEmail = ds.child("email").getValue(String.class);
+                            if (dbEmail != null && dbEmail.trim().equalsIgnoreCase(userEmail.trim())) {
+                                updated = true;
+                                ds.getRef().child("password").setValue(hashedPassword)
+                                        .addOnCompleteListener(task -> {
+                                            progressDialog.dismiss();
+                                            if (task.isSuccessful()) {
+                                                Toast.makeText(ForgotPasswordActivity.this, "Password updated successfully", Toast.LENGTH_SHORT).show();
+                                                finish(); // Go back to login
+                                            } else {
+                                                Toast.makeText(ForgotPasswordActivity.this, "Failed to update password", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                break;
+                            }
                         }
+
+                        if (!updated) {
+                            progressDialog.dismiss();
+                            Toast.makeText(ForgotPasswordActivity.this, "Error: User record lost. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
+
                         // Remove the verification code
                         database.getReference().child("VerificationCodes").child(userEmail.replace(".", "_")).removeValue();
                     }
