@@ -223,26 +223,39 @@ public class ForgotPasswordActivity extends BaseActivity {
     private void resetPassword(String newPassword) {
         progressDialog.setMessage("Updating password...");
         progressDialog.show();
-        // Hash the new password
-        String hashedPassword = HashAlgorithm.hashPassword(newPassword, userEmail);
-
-        // Update in Database first
-        database.getReference().child("UserProfiles").orderByChild("email").equalTo(userEmail)
+        
+        // IMPORTANT: We do NOT hash the password here because SigninActivity 
+        // will hash it during the next login. We save the RAW password 
+        // so that it matches the logic in Signup/Signin.
+        
+        database.getReference().child("UserProfiles")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        boolean found = false;
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            ds.getRef().child("password").setValue(hashedPassword)
-                                    .addOnCompleteListener(task -> {
-                                        progressDialog.dismiss();
-                                        if (task.isSuccessful()) {
-                                            Toast.makeText(ForgotPasswordActivity.this, "Password updated successfully", Toast.LENGTH_SHORT).show();
-                                            finish(); // Go back to login
-                                        } else {
-                                            Toast.makeText(ForgotPasswordActivity.this, "Failed to update password", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                            String dbEmail = ds.child("email").getValue(String.class);
+                            if (dbEmail != null && dbEmail.trim().equalsIgnoreCase(userEmail.trim())) {
+                                found = true;
+                                ds.getRef().child("password").setValue(newPassword)
+                                        .addOnCompleteListener(task -> {
+                                            progressDialog.dismiss();
+                                            if (task.isSuccessful()) {
+                                                Toast.makeText(ForgotPasswordActivity.this, "Password updated successfully", Toast.LENGTH_SHORT).show();
+                                                finish(); // Go back to login
+                                            } else {
+                                                Toast.makeText(ForgotPasswordActivity.this, "Failed to update password", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                break;
+                            }
                         }
+
+                        if (!found) {
+                            progressDialog.dismiss();
+                            Toast.makeText(ForgotPasswordActivity.this, "Error: User record lost. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
+
                         // Remove the verification code
                         database.getReference().child("VerificationCodes").child(userEmail.replace(".", "_")).removeValue();
                     }

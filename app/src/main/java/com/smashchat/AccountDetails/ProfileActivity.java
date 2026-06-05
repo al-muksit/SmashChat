@@ -158,20 +158,34 @@ public class ProfileActivity extends BaseActivity {
                 progressDialog.show();
 
                 String email = user.getEmail();
-                String hashedCurrent = HashAlgorithm.hashPassword(currentPassword, email);
-                String hashedNew = HashAlgorithm.hashPassword(newPassword, email);
-
-                // Re-authenticate user
-                user.reauthenticate(EmailAuthProvider.getCredential(email, hashedCurrent))
+                // Standardize: We don't hash before saving to DB, 
+                // because Signup/Signin doesn't hash the DB value.
+                
+                // Re-authenticate user (using the raw password because Firebase Auth 
+                // has the raw password, while our DB has the raw one too)
+                user.reauthenticate(EmailAuthProvider.getCredential(email, currentPassword))
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
-                                user.updatePassword(hashedNew).addOnCompleteListener(updateTask -> {
-                                    progressDialog.dismiss();
+                                user.updatePassword(newPassword).addOnCompleteListener(updateTask -> {
                                     if (updateTask.isSuccessful()) {
-                                        dialog.dismiss();
-                                        Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
-                                        showPasswordChangedSuccessDialog();
+                                        // Update the RAW password in our custom Database node too
+                                        String uid = firebaseAuth.getUid();
+                                        if (uid != null) {
+                                            firebaseDatabase.getReference().child("UserProfiles")
+                                                    .child(uid).child("password").setValue(newPassword)
+                                                    .addOnCompleteListener(dbTask -> {
+                                                        progressDialog.dismiss();
+                                                        if (dbTask.isSuccessful()) {
+                                                            dialog.dismiss();
+                                                            Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
+                                                            showPasswordChangedSuccessDialog();
+                                                        } else {
+                                                            Toast.makeText(this, "Changed in Auth but failed in DB", Toast.LENGTH_SHORT).show();
+                                                        }
+                                                    });
+                                        }
                                     } else {
+                                        progressDialog.dismiss();
                                         Toast.makeText(this, "Error: " + Objects.requireNonNull(updateTask.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
