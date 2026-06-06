@@ -212,9 +212,8 @@ public class SignupActivity extends BaseActivity {
 
     private void createNewUser() {
         progressDialog.show();
-        // IMPORTANT: We do NOT hash the password here because SigninActivity 
-        // will hash it before calling Firebase Auth. We must save the RAW 
-        // password to the UserProfiles node to stay consistent.
+        // IMPORTANT: We no longer store the password in the Realtime Database.
+        // It is only stored securely in Firebase Authentication.
         
         final String finalCustomId = customIdStr.startsWith("@") ? customIdStr : "@" + customIdStr;
 
@@ -222,7 +221,7 @@ public class SignupActivity extends BaseActivity {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String id = Objects.requireNonNull(task.getResult().getUser()).getUid();
-                        saveUserToDatabase(id, nameStr, emailStr, passStr, finalCustomId);
+                        saveUserToDatabase(id, nameStr, emailStr, finalCustomId);
                         firebaseDatabase.getReference().child("SignupCodes").child(emailStr.replace(".", "_")).removeValue();
                     } else {
                         progressDialog.dismiss();
@@ -231,8 +230,8 @@ public class SignupActivity extends BaseActivity {
                 });
     }
 
-    private void saveUserToDatabase(String id, String username, String email, String password, String customId) {
-        Users users = new Users(username, email, password);
+    private void saveUserToDatabase(String id, String username, String email, String customId) {
+        Users users = new Users(username, email);
         users.setUserId(id);
         users.setCustomId(customId);
         users.setProfilePic(""); // Default empty

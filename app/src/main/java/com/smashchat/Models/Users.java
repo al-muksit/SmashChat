@@ -7,7 +7,6 @@ public class Users {
     private String profilePic;
     private String userName;
     private String email;
-    private String password;
     private String userId;
     private String lastMessage;
     private String phone;
@@ -21,11 +20,10 @@ public class Users {
     /**
      * Full constructor for a user.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status) {
+    public Users(String profilePic, String userName, String email, String userId, String lastMessage, String phone, String address, String customId, String status) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
-        this.password = password;
         this.userId = userId;
         this.lastMessage = lastMessage;
         this.phone = phone;
@@ -37,11 +35,10 @@ public class Users {
     /**
      * Full constructor for a user including lastMessageTime.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime) {
+    public Users(String profilePic, String userName, String email, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
-        this.password = password;
         this.userId = userId;
         this.lastMessage = lastMessage;
         this.phone = phone;
@@ -54,11 +51,10 @@ public class Users {
     /**
      * Full constructor for a user including lastMessageTime and read status.
      */
-    public Users(String profilePic, String userName, String email, String password, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime, boolean read) {
+    public Users(String profilePic, String userName, String email, String userId, String lastMessage, String phone, String address, String customId, String status, long lastMessageTime, boolean read) {
         this.profilePic = profilePic;
         this.userName = userName;
         this.email = email;
-        this.password = password;
         this.userId = userId;
         this.lastMessage = lastMessage;
         this.phone = phone;
@@ -78,10 +74,9 @@ public class Users {
     /**
      * Constructor used during Sign-up.
      */
-    public Users(String userName, String email, String password) {
+    public Users(String userName, String email) {
         this.userName = userName;
         this.email = email;
-        this.password = password;
         this.status = "Offline";
         this.lastMessageTime = 0;
         this.read = true;
@@ -143,14 +138,6 @@ public class Users {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getUserId() {

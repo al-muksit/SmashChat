@@ -167,25 +167,12 @@ public class ProfileActivity extends BaseActivity {
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
                                 user.updatePassword(newPassword).addOnCompleteListener(updateTask -> {
+                                    progressDialog.dismiss();
                                     if (updateTask.isSuccessful()) {
-                                        // Update the RAW password in our custom Database node too
-                                        String uid = firebaseAuth.getUid();
-                                        if (uid != null) {
-                                            firebaseDatabase.getReference().child("UserProfiles")
-                                                    .child(uid).child("password").setValue(newPassword)
-                                                    .addOnCompleteListener(dbTask -> {
-                                                        progressDialog.dismiss();
-                                                        if (dbTask.isSuccessful()) {
-                                                            dialog.dismiss();
-                                                            Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
-                                                            showPasswordChangedSuccessDialog();
-                                                        } else {
-                                                            Toast.makeText(this, "Changed in Auth but failed in DB", Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        }
+                                        dialog.dismiss();
+                                        Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
+                                        showPasswordChangedSuccessDialog();
                                     } else {
-                                        progressDialog.dismiss();
                                         Toast.makeText(this, "Error: " + Objects.requireNonNull(updateTask.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
