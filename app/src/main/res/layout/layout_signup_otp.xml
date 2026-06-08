@@ -22,14 +22,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:inputType="number"
         android:itemBackground="@drawable/bg_otp_item"
         android:textColor="?attr/colorOnSurface"
-        app:OtpHideLineWhenFilled="true"
+        android:cursorVisible="true"
         app:OtpItemCount="6"
         app:OtpItemSpacing="8dp"
         app:OtpLineColor="?attr/colorPrimary"
-        app:OtpState_filled="true"
         app:OtpViewType="rectangle" />
 
     <Button

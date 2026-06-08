@@ -48,7 +48,7 @@ public class SigninActivity extends BaseActivity {
         loadingBar.setMessage("Signing you in, please wait...");
 
         binding.signin.setOnClickListener(v -> {
-            String email = binding.email.getText().toString().trim();
+            String email = binding.email.getText().toString().trim().toLowerCase();
             String pass = binding.password.getText().toString().trim();
 
             if (email.isEmpty() || pass.isEmpty()) {

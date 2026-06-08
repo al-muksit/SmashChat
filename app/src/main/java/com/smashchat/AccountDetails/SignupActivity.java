@@ -231,7 +231,7 @@ public class SignupActivity extends BaseActivity {
     }
 
     private void saveUserToDatabase(String id, String username, String email, String customId) {
-        Users users = new Users(username, email);
+        Users users = new Users(username, email.toLowerCase());
         users.setUserId(id);
         users.setCustomId(customId);
         users.setProfilePic(""); // Default empty
