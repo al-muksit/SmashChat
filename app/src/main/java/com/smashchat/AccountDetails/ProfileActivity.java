@@ -37,6 +37,7 @@ import com.squareup.picasso.Picasso;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -118,13 +119,68 @@ public class ProfileActivity extends BaseActivity {
             showLogoutConfirmationDialog();
             return true;
         } else if (id == R.id.menu_change_email) {
-            // Future implementation
+            showChangeEmailDialog();
             return true;
         } else if (id == R.id.menu_reset_password) {
             showChangePasswordDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showChangeEmailDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_change_email, null);
+        builder.setView(dialogView);
+
+        EditText etCurrentPassword = dialogView.findViewById(R.id.etCurrentPassword);
+        EditText etNewEmail = dialogView.findViewById(R.id.etNewEmail);
+        MaterialButton btnChange = dialogView.findViewById(R.id.btnChangeEmail);
+
+        AlertDialog dialog = builder.create();
+
+        btnChange.setOnClickListener(v -> {
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            String newEmail = etNewEmail.getText().toString().trim().toLowerCase();
+
+            if (currentPassword.isEmpty() || newEmail.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null && user.getEmail() != null) {
+                progressDialog.setMessage("Verifying...");
+                progressDialog.show();
+
+                // Re-authenticate user
+                user.reauthenticate(EmailAuthProvider.getCredential(user.getEmail(), currentPassword))
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                user.verifyBeforeUpdateEmail(newEmail).addOnCompleteListener(updateTask -> {
+                                    progressDialog.dismiss();
+                                    if (updateTask.isSuccessful()) {
+                                        dialog.dismiss();
+                                        showCustomSuccessDialog("Verification Sent", 
+                                                "A verification link has been sent to " + newEmail + ". Please click the link to complete the email change. Your email will be updated once verified.");
+                                    } else {
+                                        Toast.makeText(this, "Error: " + Objects.requireNonNull(updateTask.getException()).getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                progressDialog.dismiss();
+                                Toast.makeText(this, "Authentication failed: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+        });
+
+        dialog.show();
     }
 
     private void showChangePasswordDialog() {
@@ -170,8 +226,8 @@ public class ProfileActivity extends BaseActivity {
                                     progressDialog.dismiss();
                                     if (updateTask.isSuccessful()) {
                                         dialog.dismiss();
-                                        Toast.makeText(this, "Password Changed Successfully", Toast.LENGTH_SHORT).show();
-                                        showPasswordChangedSuccessDialog();
+                                        showCustomSuccessDialog("Password Changed", 
+                                                "Your password has been updated successfully.");
                                     } else {
                                         Toast.makeText(this, "Error: " + Objects.requireNonNull(updateTask.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                                     }
@@ -187,13 +243,26 @@ public class ProfileActivity extends BaseActivity {
         dialog.show();
     }
 
-    private void showPasswordChangedSuccessDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Password Changed")
-                .setMessage("Your password has been changed successfully.")
-                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                .setCancelable(false)
-                .show();
+    private void showCustomSuccessDialog(String title, String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_success, null);
+        builder.setView(dialogView);
+
+        TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
+        TextView tvMessage = dialogView.findViewById(R.id.tvMessage);
+        MaterialButton btnOk = dialogView.findViewById(R.id.btnOk);
+
+        tvTitle.setText(title);
+        tvMessage.setText(message);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        btnOk.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void showLogoutConfirmationDialog() {
@@ -213,8 +282,36 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void loadUserData() {
-        String uid = firebaseAuth.getUid();
-        if (uid == null) return;
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        String uid = currentUser.getUid();
+
+        // Reload user to get the latest email status (in case they just clicked the verification link)
+        currentUser.reload().addOnCompleteListener(reloadTask -> {
+            if (reloadTask.isSuccessful()) {
+                String authEmail = currentUser.getEmail();
+                if (authEmail != null) {
+                    // Sync with database if auth email is different
+                    firebaseDatabase.getReference().child("UserProfiles").child(uid).child("email")
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    String dbEmail = snapshot.getValue(String.class);
+                                    if (dbEmail != null && !dbEmail.equals(authEmail)) {
+                                        // Update DB and Prefs
+                                        firebaseDatabase.getReference().child("UserProfiles").child(uid).child("email").setValue(authEmail);
+                                        preferenceManager.saveUserData(preferenceManager.getUserName(), authEmail, preferenceManager.getProfilePic());
+                                        binding.etEmail.setText(authEmail);
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {}
+                            });
+                }
+            }
+        });
 
         // Try to load from SQLite first
         android.graphics.Bitmap localBitmap = databaseHelper.getImage(uid);
@@ -344,7 +441,7 @@ public class ProfileActivity extends BaseActivity {
     private void saveToDatabase(String uid, String customId, String imageUrl) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("userName", binding.etUserName.getText().toString().trim());
-        updates.put("email", binding.etEmail.getText().toString().trim());
+        updates.put("email", binding.etEmail.getText().toString().trim().toLowerCase());
         updates.put("phone", binding.etPhone.getText().toString().trim());
         updates.put("address", binding.etAddress.getText().toString().trim());
         updates.put("customId", customId);
@@ -356,7 +453,7 @@ public class ProfileActivity extends BaseActivity {
                     if (task.isSuccessful()) {
                         preferenceManager.saveUserData(
                                 binding.etUserName.getText().toString().trim(),
-                                binding.etEmail.getText().toString().trim(),
+                                binding.etEmail.getText().toString().trim().toLowerCase(),
                                 imageUrl
                         );
                         Toast.makeText(ProfileActivity.this, "Profile Updated Successfully", Toast.LENGTH_SHORT).show();

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Change Email"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="24dp"
+        android:gravity="center"/>
+
+    <EditText
+        android:id="@+id/etCurrentPassword"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/edit_text_background"
+        android:hint="Confirm Current Password"
+        android:inputType="textPassword"
+        android:paddingStart="20dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?android:attr/textColorHint" />
+
+    <EditText
+        android:id="@+id/etNewEmail"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/edit_text_background"
+        android:hint="New Email Address"
+        android:inputType="textEmailAddress"
+        android:paddingStart="20dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?android:attr/textColorHint" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnChangeEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Send Verification Link"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        app:backgroundTint="#009688"
+        app:cornerRadius="8dp" />
+
+</LinearLayout>
