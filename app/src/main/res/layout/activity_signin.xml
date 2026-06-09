@@ -48,7 +48,8 @@
                 android:inputType="textEmailAddress"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <EditText
                 android:id="@+id/password"
@@ -60,7 +61,8 @@
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <Button
                 android:id="@+id/signin"

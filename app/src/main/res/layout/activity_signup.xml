@@ -53,7 +53,8 @@
                     android:hint="Enter name"
                     android:paddingStart="20dp"
                     android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?android:attr/textColorHint" />
+                    android:textColorHint="?android:attr/textColorHint"
+                    android:textIsSelectable="true" />
 
                 <EditText
                     android:id="@+id/userId"
@@ -64,7 +65,8 @@
                     android:hint="Enter Unique ID (e.g. user123)"
                     android:paddingStart="20dp"
                     android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?android:attr/textColorHint" />
+                    android:textColorHint="?android:attr/textColorHint"
+                    android:textIsSelectable="true" />
 
                 <EditText
                     android:id="@+id/email"
@@ -76,7 +78,8 @@
                     android:inputType="textEmailAddress"
                     android:paddingStart="20dp"
                     android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?android:attr/textColorHint" />
+                    android:textColorHint="?android:attr/textColorHint"
+                    android:textIsSelectable="true" />
 
                 <EditText
                     android:id="@+id/password"
@@ -88,7 +91,8 @@
                     android:inputType="textPassword"
                     android:paddingStart="20dp"
                     android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?android:attr/textColorHint" />
+                    android:textColorHint="?android:attr/textColorHint"
+                    android:textIsSelectable="true" />
 
                 <Button
                     android:id="@+id/signup"

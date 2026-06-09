@@ -55,7 +55,8 @@
             android:hint="Type a message..."
             android:padding="12sp"
             android:textColor="?attr/colorOnSurface"
-            android:textColorHint="?android:attr/textColorHint" />
+            android:textColorHint="?android:attr/textColorHint"
+            android:textIsSelectable="true" />
 
         <ImageView
             android:id="@+id/btnSend"
