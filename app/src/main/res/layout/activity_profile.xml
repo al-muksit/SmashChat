@@ -89,7 +89,8 @@
                 android:hint="Name"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <EditText
                 android:id="@+id/etCustomId"
@@ -100,7 +101,8 @@
                 android:hint="Unique User ID (e.g. @username)"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <EditText
                 android:id="@+id/etEmail"
@@ -112,7 +114,8 @@
                 android:hint="Email"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <EditText
                 android:id="@+id/etPhone"
@@ -124,7 +127,8 @@
                 android:inputType="phone"
                 android:paddingStart="20dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <EditText
                 android:id="@+id/etAddress"
@@ -137,7 +141,8 @@
                 android:minHeight="80dp"
                 android:padding="15dp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?android:attr/textColorHint" />
+                android:textColorHint="?android:attr/textColorHint"
+                android:textIsSelectable="true" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"

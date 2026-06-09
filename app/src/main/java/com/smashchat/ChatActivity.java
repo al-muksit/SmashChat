@@ -189,6 +189,12 @@ public class ChatActivity extends BaseActivity {
 
         messageList = new ArrayList<>();
         chatAdapter = new ChatAdapter(messageList, this, receiverId);
+        chatAdapter.setOnMessageUpdateListener(new ChatAdapter.OnMessageUpdateListener() {
+            @Override
+            public void onMessageEdited(Messages message, String newMessage) {
+                editMessage(message, newMessage);
+            }
+        });
         binding.chatRecyclerView.setAdapter(chatAdapter);
         
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -252,6 +258,7 @@ public class ChatActivity extends BaseActivity {
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             Messages model = ds.getValue(Messages.class);
                             if (model != null) {
+                                model.setMessageId(ds.getKey());
                                 // Decrypt message for display and local storage
                                 model.setMessage(AESalgorithm.decrypt(model.getMessage(), sharedSecretKey));
                                 messageList.add(model);
@@ -363,6 +370,24 @@ public class ChatActivity extends BaseActivity {
         map.put("lastMessage", encryptedLastMsg);
         map.put("read", read);
         database.getReference().child("UserChats").child(uid).child(otherId).updateChildren(map);
+    }
+
+    private void editMessage(Messages messageModel, String newMessage) {
+        String sharedSecretKey = (senderId.compareTo(receiverId) < 0) ? (senderId + receiverId) : (receiverId + senderId);
+        String encryptedMessage = AESalgorithm.encrypt(newMessage, sharedSecretKey);
+        
+        java.util.HashMap<String, Object> map = new java.util.HashMap<>();
+        map.put("message", encryptedMessage);
+        map.put("edited", true);
+
+        database.getReference().child("Messages").child(senderRoom).child(messageModel.getMessageId()).updateChildren(map);
+        database.getReference().child("Messages").child(receiverIdRoom).child(messageModel.getMessageId()).updateChildren(map);
+        
+        // Update last message if this was the last message
+        if (messageList.indexOf(messageModel) == messageList.size() - 1) {
+            updateLastChatInfo(senderId, receiverId, messageModel.getTimestamp(), encryptedMessage, true);
+            updateLastChatInfo(receiverId, senderId, messageModel.getTimestamp(), encryptedMessage, false);
+        }
     }
 
     @Override

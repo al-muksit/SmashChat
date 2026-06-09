@@ -25,7 +25,8 @@
         android:inputType="textPassword"
         android:paddingStart="20dp"
         android:textColor="?attr/colorOnSurface"
-        android:textColorHint="?android:attr/textColorHint" />
+        android:textColorHint="?android:attr/textColorHint"
+        android:textIsSelectable="true" />
 
     <EditText
         android:id="@+id/etNewEmail"
@@ -37,7 +38,8 @@
         android:inputType="textEmailAddress"
         android:paddingStart="20dp"
         android:textColor="?attr/colorOnSurface"
-        android:textColorHint="?android:attr/textColorHint" />
+        android:textColorHint="?android:attr/textColorHint"
+        android:textIsSelectable="true" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnChangeEmail"

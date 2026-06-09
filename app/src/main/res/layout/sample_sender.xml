@@ -1,26 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="8dp">
 
     <TextView
-        android:id="@+id/senderText"
+        android:id="@+id/txtEdited"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:background="@drawable/sender_bg"
-        android:maxWidth="280dp"
-        android:padding="12dp"
-        android:text="Sender Message"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="16sp" />
+        android:layout_marginEnd="4dp"
+        android:text="edited"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="10sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/senderMsgContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/txtEdited"
+        android:layout_alignParentEnd="true"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/senderText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/sender_bg"
+            android:clickable="true"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:inputType="textMultiLine"
+            android:maxWidth="280dp"
+            android:padding="12dp"
+            android:text="Sender Message"
+            android:textColor="?attr/colorOnSurface"
+            android:textIsSelectable="true"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:id="@+id/optionsLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/btnCopy"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/outline_content_copy_24"
+                app:tint="?attr/colorOnSurface" />
+
+            <ImageView
+                android:id="@+id/btnEdit"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/outline_edit_24"
+                app:tint="?attr/colorOnSurface" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/editControlsLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/btnCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:padding="4dp"
+                android:text="Cancel"
+                android:textColor="#FF5252"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnOkay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="4dp"
+                android:text="Okay"
+                android:textColor="#4CAF50"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/senderTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/senderText"
+        android:layout_below="@+id/senderMsgContainer"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="4dp"
         android:text="12:00 PM"
