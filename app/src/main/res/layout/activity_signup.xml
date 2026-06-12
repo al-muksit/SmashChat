@@ -81,18 +81,30 @@
                     android:textColorHint="?android:attr/textColorHint"
                     android:textIsSelectable="true" />
 
-                <EditText
-                    android:id="@+id/password"
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="15dp"
-                    android:background="@drawable/auth_edittext_bg"
-                    android:hint="Enter password"
-                    android:inputType="textPassword"
-                    android:paddingStart="20dp"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?android:attr/textColorHint"
-                    android:textIsSelectable="true" />
+                    android:paddingEnd="12dp"
+                    app:boxBackgroundMode="none"
+                    app:endIconDrawable="@drawable/password_toggle_selector"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="?attr/colorOnSurface"
+                    app:hintEnabled="false">
+
+                    <EditText
+                        android:id="@+id/password"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/auth_edittext_bg"
+                        android:hint="Enter password"
+                        android:inputType="textPassword"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="48dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?android:attr/textColorHint"
+                        android:textIsSelectable="true" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/signup"
