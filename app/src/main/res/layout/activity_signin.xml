@@ -55,7 +55,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:paddingEnd="12dp"
                 app:boxBackgroundMode="none"
                 app:endIconDrawable="@drawable/password_toggle_selector"
                 app:endIconMode="password_toggle"
