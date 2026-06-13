@@ -19,7 +19,6 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingEnd="12dp"
         app:boxBackgroundMode="none"
         app:endIconDrawable="@drawable/password_toggle_selector"
         app:endIconMode="password_toggle"
