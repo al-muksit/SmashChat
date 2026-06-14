@@ -4,19 +4,28 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.app.AlertDialog;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -24,10 +33,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -48,6 +60,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends BaseActivity {
 
@@ -556,8 +578,172 @@ public class MainActivity extends BaseActivity {
                         }
                     }).addOnFailureListener(e -> Toast.makeText(this, "Failed to get link", Toast.LENGTH_SHORT).show());
             return true;
+        } else if (id == R.id.update) {
+            showUpdateDialog();
+            return true;
         }
         
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showUpdateDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_update, null);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        TextView title = dialogView.findViewById(R.id.update_title);
+        TextView versionInfo = dialogView.findViewById(R.id.version_info);
+        TextView releaseNotes = dialogView.findViewById(R.id.release_notes);
+        LinearLayout progressContainer = dialogView.findViewById(R.id.progress_container);
+        LinearProgressIndicator progressBar = dialogView.findViewById(R.id.update_progress);
+        TextView progressPercent = dialogView.findViewById(R.id.progress_percent);
+        Button btnUpdate = dialogView.findViewById(R.id.btn_update);
+        Button btnClose = dialogView.findViewById(R.id.btn_close);
+
+        // Fetch update info from Firebase
+        firebaseDatabase.getReference("AppUpdate").get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                Long latestVersionCode = snapshot.child("latestVersionCode").getValue(Long.class);
+                String latestVersionName = snapshot.child("latestVersionName").getValue(String.class);
+                String apkUrl = snapshot.child("apkUrl").getValue(String.class);
+                String notes = snapshot.child("releaseNotes").getValue(String.class);
+
+                long currentVersionCode = BuildConfig.VERSION_CODE;
+                String currentVersionName = BuildConfig.VERSION_NAME;
+
+                versionInfo.setText("Current: " + currentVersionName + " | Latest: " + (latestVersionName != null ? latestVersionName : "N/A"));
+
+                if (latestVersionCode != null && latestVersionCode > currentVersionCode) {
+                    title.setText("New Version Available!");
+                    releaseNotes.setText(notes != null ? notes : "A new version of SmashChat is available. Update now for the latest features!");
+                    btnUpdate.setText("Update Now");
+                    btnUpdate.setOnClickListener(v -> {
+                        if (apkUrl != null) {
+                            startDownload(apkUrl, progressContainer, progressBar, progressPercent, btnUpdate);
+                        } else {
+                            Toast.makeText(this, "Update link not found", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    title.setText("Already Latest Version");
+                    releaseNotes.setText("You are using the latest version of SmashChat.");
+                    btnUpdate.setText("OK");
+                    btnUpdate.setOnClickListener(v -> dialog.dismiss());
+                    btnClose.setVisibility(View.GONE);
+                    // Center the OK button
+                    LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) btnUpdate.getLayoutParams();
+                    params.width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    params.gravity = Gravity.CENTER;
+                    btnUpdate.setLayoutParams(params);
+                }
+            } else {
+                Toast.makeText(this, "No updates available at the moment", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Update check failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void startDownload(String url, LinearLayout progressContainer, LinearProgressIndicator progressBar, TextView progressPercent, Button btnUpdate) {
+        progressContainer.setVisibility(View.VISIBLE);
+        btnUpdate.setEnabled(false);
+        btnUpdate.setText("Downloading...");
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Download failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    btnUpdate.setEnabled(true);
+                    btnUpdate.setText("Try Again");
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Download error: " + response.message(), Toast.LENGTH_SHORT).show();
+                        btnUpdate.setEnabled(true);
+                        btnUpdate.setText("Try Again");
+                    });
+                    return;
+                }
+
+                if (response.body() == null) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Empty download response", Toast.LENGTH_SHORT).show();
+                        btnUpdate.setEnabled(true);
+                        btnUpdate.setText("Try Again");
+                    });
+                    return;
+                }
+
+                File apkFile = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "SmashChat_update.apk");
+                if (apkFile.exists()) apkFile.delete();
+
+                try (InputStream is = response.body().byteStream();
+                     FileOutputStream fos = new FileOutputStream(apkFile)) {
+
+                    long totalBytes = response.body().contentLength();
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    long downloadedBytes = 0;
+
+                    while ((read = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, read);
+                        downloadedBytes += read;
+                        
+                        final long total = totalBytes;
+                        final long current = downloadedBytes;
+                        runOnUiThread(() -> {
+                            if (total > 0) {
+                                int progress = (int) ((current * 100) / total);
+                                progressBar.setProgress(progress);
+                                progressPercent.setText(progress + "%");
+                            } else {
+                                progressBar.setIndeterminate(true);
+                                progressPercent.setText("Downloading...");
+                            }
+                        });
+                    }
+                    fos.flush();
+                    runOnUiThread(() -> {
+                        btnUpdate.setEnabled(true);
+                        btnUpdate.setText("Install Now");
+                        btnUpdate.setOnClickListener(v -> installApk(apkFile));
+                        // Automatically trigger installation
+                        installApk(apkFile);
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Error saving APK: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        btnUpdate.setEnabled(true);
+                        btnUpdate.setText("Try Again");
+                    });
+                }
+            }
+        });
+    }
+
+    private void installApk(File file) {
+        Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 }
