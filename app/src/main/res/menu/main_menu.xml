@@ -17,4 +17,10 @@
         android:icon="@drawable/baseline_share_24"
         android:title="Share"
         app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/update"
+        android:title="Update"
+        app:showAsAction="never"/>
+
 </menu>
