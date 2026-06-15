@@ -550,6 +550,18 @@ public class MainActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        
+        // This hack is to show icons in the overflow menu
+        if (menu.getClass().getSimpleName().equals("MenuBuilder")) {
+            try {
+                java.lang.reflect.Method m = menu.getClass().getDeclaredMethod("setOptionalIconsVisible", boolean.class);
+                m.setAccessible(true);
+                m.invoke(menu, true);
+            } catch (Exception e) {
+                Log.e("MainActivity", "onMenuOpened", e);
+            }
+        }
+
         return true;
     }
 
@@ -564,7 +576,7 @@ public class MainActivity extends BaseActivity {
             startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             return true;
         } else if (id == R.id.share) {
-            firebaseDatabase.getReference("AppLink").child("SmashChat")
+            firebaseDatabase.getReference("AppUpdate").child("apkUrl")
                     .get().addOnSuccessListener(dataSnapshot -> {
                         String appLink = dataSnapshot.getValue(String.class);
                         if (appLink != null) {
@@ -578,7 +590,8 @@ public class MainActivity extends BaseActivity {
                         }
                     }).addOnFailureListener(e -> Toast.makeText(this, "Failed to get link", Toast.LENGTH_SHORT).show());
             return true;
-        } else if (id == R.id.update) {
+        }
+else if (id == R.id.update) {
             showUpdateDialog();
             return true;
         }
