@@ -4,23 +4,28 @@
 
     <item
         android:id="@+id/profile"
-        android:icon="@drawable/profile"
+        android:icon="@drawable/baseline_person_24"
         android:title="Profile"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="never"/>
     <item
         android:id="@+id/settings"
         android:icon="@drawable/settings"
         android:title="@string/settings"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="never"/>
     <item
         android:id="@+id/share"
         android:icon="@drawable/baseline_share_24"
         android:title="Share"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="never"/>
 
     <item
         android:id="@+id/update"
         android:title="Update"
+        android:icon="@drawable/outline_cloud_done_24"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="never"/>
 
 </menu>
